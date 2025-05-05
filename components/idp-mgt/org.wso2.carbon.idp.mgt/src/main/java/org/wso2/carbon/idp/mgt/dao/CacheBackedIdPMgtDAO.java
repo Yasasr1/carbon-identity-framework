@@ -29,6 +29,9 @@ import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.core.model.ExpressionNode;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
+import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementClientException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementServerException;
@@ -222,29 +225,40 @@ public class CacheBackedIdPMgtDAO {
         IdPNameCacheKey cacheKey = new IdPNameCacheKey(idPName);
         IdPCacheEntry entry = idPCacheByName.getValueFromCache(cacheKey, tenantDomain);
 
-        if (entry != null) {
-            log.debug("Cache entry found for Identity Provider " + idPName);
-            IdentityProvider identityProvider = entry.getIdentityProvider();
-            IdPManagementUtil.removeRandomPasswords(identityProvider, false);
-            return identityProvider;
-        } else {
-            log.debug("Cache entry not found for Identity Provider " + idPName
-                    + ". Fetching entry from DB");
+        try {
+            if (IdPManagementConstants.RESIDENT_IDP.equals(idPName) &&
+                    OrganizationManagementUtil.isOrganization(tenantDomain) && entry != null) {
+                log.debug("Cache entry found for Identity Provider " + idPName);
+                IdentityProvider identityProvider = entry.getIdentityProvider();
+                IdPManagementUtil.removeRandomPasswords(identityProvider, false);
+                return identityProvider;
+            } else {
+                log.debug("Cache entry not found for Identity Provider " + idPName
+                        + ". Fetching entry from DB");
+            }
+        } catch (OrganizationManagementException e) {
+            throw new IdentityProviderManagementException("Error while checking the organization", e);
         }
 
         IdentityProvider identityProvider = idPManagementFacade.getIdPByName(dbConnection, idPName,
                                                                    tenantId, tenantDomain);
 
-        if (identityProvider != null) {
-            log.debug("Entry fetched from DB for Identity Provider " + idPName + ". Updating cache");
-            idPCacheByName.addToCache(cacheKey, new IdPCacheEntry(identityProvider), tenantDomain);
-            if (identityProvider.getHomeRealmId() != null) {
-                IdPHomeRealmIdCacheKey homeRealmIdCacheKey = new IdPHomeRealmIdCacheKey(
-                        identityProvider.getHomeRealmId());
-                idPCacheByHRI.addToCache(homeRealmIdCacheKey, new IdPCacheEntry(identityProvider), tenantDomain);
+        try {
+            if (identityProvider != null &&
+                    !IdPManagementConstants.RESIDENT_IDP.equals(idPName) &&
+                    !OrganizationManagementUtil.isOrganization(tenantDomain)) {
+                log.debug("Entry fetched from DB for Identity Provider " + idPName + ". Updating cache");
+                idPCacheByName.addToCache(cacheKey, new IdPCacheEntry(identityProvider), tenantDomain);
+                if (identityProvider.getHomeRealmId() != null) {
+                    IdPHomeRealmIdCacheKey homeRealmIdCacheKey = new IdPHomeRealmIdCacheKey(
+                            identityProvider.getHomeRealmId());
+                    idPCacheByHRI.addToCache(homeRealmIdCacheKey, new IdPCacheEntry(identityProvider), tenantDomain);
+                }
+            } else {
+                log.debug("Entry for Identity Provider " + idPName + " not found in cache or DB");
             }
-        } else {
-            log.debug("Entry for Identity Provider " + idPName + " not found in cache or DB");
+        } catch (OrganizationManagementException e) {
+            throw new IdentityProviderManagementException("Error while checking the organization", e);
         }
 
         return identityProvider;

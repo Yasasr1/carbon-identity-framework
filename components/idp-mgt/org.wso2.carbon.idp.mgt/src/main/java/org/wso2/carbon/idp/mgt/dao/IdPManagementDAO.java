@@ -57,6 +57,13 @@ import org.wso2.carbon.identity.core.model.ExpressionNode;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.core.util.LambdaExceptionUtils;
+import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
+import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
+import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
+import org.wso2.carbon.identity.organization.resource.hierarchy.traverse.service.OrgResourceResolverService;
+import org.wso2.carbon.identity.organization.resource.hierarchy.traverse.service.exception.OrgResourceHierarchyTraverseException;
+import org.wso2.carbon.identity.organization.resource.hierarchy.traverse.service.strategy.MergeAllAggregationStrategy;
 import org.wso2.carbon.identity.secret.mgt.core.exception.SecretManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementClientException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -98,6 +105,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
@@ -823,6 +831,9 @@ public class IdPManagementDAO {
         } catch (IdentityProviderManagementException e) {
             throw new IdentityProviderManagementServerException("Error occurred while performing required " +
                     "attribute filter", e);
+        } catch (OrganizationManagementException e) {
+            throw new IdentityProviderManagementServerException("Error occurred while retrieving organization " +
+                    "information for tenant: " + IdentityTenantUtil.getTenantDomain(tenantId), e);
         }
     }
 
@@ -1146,7 +1157,7 @@ public class IdPManagementDAO {
      */
     private FederatedAuthenticatorConfig[] getFederatedAuthenticatorConfigs(
             Connection dbConnection, String idPName, IdentityProvider federatedIdp, int tenantId)
-            throws IdentityProviderManagementClientException, SQLException {
+            throws IdentityProviderManagementException, SQLException, OrganizationManagementException {
 
         int idPId = getIdentityProviderIdentifier(dbConnection, idPName, tenantId);
 
@@ -1185,21 +1196,38 @@ public class IdPManagementDAO {
                     federatedIdp.getDefaultAuthenticatorConfig().setDisplayName(authnConfig.getDisplayName());
                 }
 
-                sqlStmt = IdPManagementConstants.SQLQueries.GET_IDP_AUTH_PROPS_SQL;
-                prepStmt2 = dbConnection.prepareStatement(sqlStmt);
-                prepStmt2.setInt(1, authnId);
-                proprs = prepStmt2.executeQuery();
-                Set<Property> properties = new HashSet<Property>();
-                while (proprs.next()) {
-                    Property property = new Property();
-                    property.setName(proprs.getString("PROPERTY_KEY"));
-                    property.setValue(proprs.getString("PROPERTY_VALUE"));
-                    if ((IdPManagementConstants.IS_TRUE_VALUE).equals(proprs.getString("IS_SECRET"))) {
-                        property.setConfidential(true);
+                OrgResourceResolverService orgResourceResolverService = IdpMgtServiceComponentHolder.getInstance()
+                        .getOrgResourceResolverService();
+                if (orgResourceResolverService != null && OrganizationManagementUtil.isOrganization(tenantId) &&
+                        IdentityApplicationConstants.Authenticator.SAML2SSO.NAME.equals(authnConfig.getName())) {
+                    List<Property> properties = new ArrayList<>();
+                    OrganizationManager orgManager =
+                            IdpMgtServiceComponentHolder.getInstance().getOrganizationManager();
+                    String orgId = orgManager.resolveOrganizationId(IdentityTenantUtil.getTenantDomain(tenantId));
+                    properties = orgResourceResolverService.getResourcesFromOrgHierarchy(
+                            orgId,
+                            LambdaExceptionUtils.rethrowFunction(
+                                    orgID -> federatedAuthenticatorPropResolver(orgID, authnConfig.getName(),
+                                            dbConnection)),
+                            new MergeAllAggregationStrategy<>(this::mergeAuthenticatorProperties));
+                    authnConfig.setProperties(properties.toArray(new Property[properties.size()]));
+                } else {
+                    Set<Property> properties = new HashSet<Property>();
+                    sqlStmt = IdPManagementConstants.SQLQueries.GET_IDP_AUTH_PROPS_SQL;
+                    prepStmt2 = dbConnection.prepareStatement(sqlStmt);
+                    prepStmt2.setInt(1, authnId);
+                    proprs = prepStmt2.executeQuery();
+                    while (proprs.next()) {
+                        Property property = new Property();
+                        property.setName(proprs.getString("PROPERTY_KEY"));
+                        property.setValue(proprs.getString("PROPERTY_VALUE"));
+                        if ((IdPManagementConstants.IS_TRUE_VALUE).equals(proprs.getString("IS_SECRET"))) {
+                            property.setConfidential(true);
+                        }
+                        properties.add(property);
                     }
-                    properties.add(property);
+                    authnConfig.setProperties(properties.toArray(new Property[properties.size()]));
                 }
-                authnConfig.setProperties(properties.toArray(new Property[properties.size()]));
 
                 if (isEmailOTPAuthenticator(authnConfig.getName())) {
                     // This is to support backward compatibility.
@@ -1210,10 +1238,75 @@ public class IdPManagementDAO {
 
             return federatedAuthenticatorConfigs
                     .toArray(new FederatedAuthenticatorConfig[federatedAuthenticatorConfigs.size()]);
+        } catch (OrgResourceHierarchyTraverseException e) {
+            throw new IdentityProviderManagementServerException("Error while retrieving federated authenticator " +
+                    "properties from parent orgs", e);
         } finally {
             IdentityDatabaseUtil.closeAllConnections(null, proprs, prepStmt2);
             IdentityDatabaseUtil.closeAllConnections(null, rs, prepStmt1);
         }
+    }
+
+    private Optional<List<Property>> federatedAuthenticatorPropResolver(String orgId, String authenticatorName,
+                                                             Connection dbConnection)
+            throws IdentityProviderManagementException {
+
+        OrganizationManager orgManager = IdpMgtServiceComponentHolder.getInstance().getOrganizationManager();
+        int authenticatorId;
+        try {
+            int tenantId = IdentityTenantUtil.getTenantId(orgManager.resolveTenantDomain(orgId));
+            int residentIdpId = getIdentityProviderIdentifier(dbConnection,
+                    IdentityApplicationConstants.RESIDENT_IDP_RESERVED_NAME, tenantId);
+            authenticatorId = getAuthenticatorIdentifier(dbConnection, residentIdpId, authenticatorName);
+        } catch (SQLException | OrganizationManagementException e) {
+            throw new IdentityProviderManagementServerException("Error while retrieving resident IdP ID", e);
+        }
+
+        String sqlStmt = IdPManagementConstants.SQLQueries.GET_IDP_AUTH_PROPS_SQL;
+        try (PreparedStatement prepStmt = dbConnection.prepareStatement(sqlStmt)) {
+            prepStmt.setInt(1, authenticatorId);
+            ResultSet rs = prepStmt.executeQuery();
+            List<Property> properties = new ArrayList<>();
+            while (rs.next()) {
+                Property property = new Property();
+                property.setName(rs.getString("PROPERTY_KEY"));
+                property.setValue(rs.getString("PROPERTY_VALUE"));
+                if ((IdPManagementConstants.IS_TRUE_VALUE).equals(rs.getString("IS_SECRET"))) {
+                    property.setConfidential(true);
+                }
+                properties.add(property);
+            }
+            return Optional.of(properties);
+        } catch (SQLException e) {
+            throw new IdentityProviderManagementServerException("Error while retrieving federated authenticator " +
+                    "properties", e);
+        }
+    }
+
+    private List<Property> mergeAuthenticatorProperties(List<Property> list1,
+                                                              List<Property> list2) {
+
+        final String[] propertiesToIgnore = {
+                "IdPEntityId",
+                "ArtifactResolveUrl",
+                "LogoutReqUrl",
+                "ECPUrl",
+                "SSOUrl"
+        };
+
+        for (String propertyToIgnore : propertiesToIgnore) {
+            list2.removeIf(property -> property.getName().equals(propertyToIgnore));
+        }
+
+        // Assumes that the sub-orgs won't contain the same property name.
+        // Since default values are stored in sub-orgs, need to remove the sub-org property if both parent and sub-org
+        // values are equal.
+        for (Property property : list2) {
+            if (list1.stream().noneMatch(p -> p.getName().equals(property.getName()))) {
+                list1.add(property);
+            }
+        }
+        return list1;
     }
 
     /**
@@ -3239,12 +3332,38 @@ public class IdPManagementDAO {
                 // Get federated idp groups.
                 federatedIdp.setIdPGroupConfig(getIdPGroupConfiguration(dbConnection, idpId));
 
-                List<IdentityProviderProperty> propertyList = filterIdentityProperties(federatedIdp,
-                        getIdentityPropertiesByIdpId(dbConnection, idpId, tenantId));
+                List<IdentityProviderProperty> propertyList;
 
-                if (IdentityApplicationConstants.RESIDENT_IDP_RESERVED_NAME.equals(idPName)) {
-                    propertyList = resolveConnectorProperties(propertyList, tenantDomain);
+                OrgResourceResolverService resourceResolverService =
+                        IdpMgtServiceComponentHolder.getInstance().getOrgResourceResolverService();
+
+                if (resourceResolverService != null) {
+                    if (IdentityApplicationConstants.RESIDENT_IDP_RESERVED_NAME.equals(idPName)) {
+                        OrganizationManager orgManager =
+                                IdpMgtServiceComponentHolder.getInstance().getOrganizationManager();
+                        String orgId = orgManager.resolveOrganizationId(tenantDomain);
+
+                        Connection finalDbConnection = dbConnection;
+                        IdentityProvider finalFederatedIdp = federatedIdp;
+                        propertyList = resourceResolverService.getResourcesFromOrgHierarchy(
+                                orgId, LambdaExceptionUtils.rethrowFunction(
+                                        orgID -> governancePropertiesRetriever(orgID, finalFederatedIdp,
+                                                finalDbConnection)),
+                                new MergeAllAggregationStrategy<>(this::mergePropertyLists));
+                        propertyList = resolveConnectorProperties(propertyList, tenantDomain);
+                    } else {
+                        propertyList = filterIdentityProperties(federatedIdp,
+                                getIdentityPropertiesByIdpId(dbConnection, idpId, tenantId));
+                    }
+                } else {
+                    propertyList = filterIdentityProperties(federatedIdp,
+                            getIdentityPropertiesByIdpId(dbConnection, idpId, tenantId));
+
+                    if (IdentityApplicationConstants.RESIDENT_IDP_RESERVED_NAME.equals(idPName)) {
+                        propertyList = resolveConnectorProperties(propertyList, tenantDomain);
+                    }
                 }
+
 
                 federatedIdp.setIdpProperties(propertyList.toArray(new IdentityProviderProperty[0]));
 
@@ -3259,6 +3378,12 @@ public class IdPManagementDAO {
         } catch (SecretManagementException e) {
             throw new IdentityProviderManagementException("Error while retrieving secrets of Identity provider : " +
                     idPName + " in tenant : " + tenantDomain, e);
+        } catch (OrganizationManagementException e) {
+            throw new IdentityProviderManagementException("Error while retrieving organization information for " +
+                    "tenant : " + tenantDomain, e);
+        } catch (OrgResourceHierarchyTraverseException e) {
+            throw new IdentityProviderManagementException("Error while resolving IDP properties from the " +
+                    "organization hierarchy for tenant : " + tenantDomain, e);
         } finally {
             if (dbConnectionInitialized) {
                 IdentityDatabaseUtil.closeAllConnections(dbConnection, rs, prepStmt);
@@ -3266,6 +3391,32 @@ public class IdPManagementDAO {
                 IdentityDatabaseUtil.closeAllConnections(null, rs, prepStmt);
             }
         }
+    }
+
+    private Optional<List<IdentityProviderProperty>> governancePropertiesRetriever(String orgId,
+                                                                                   IdentityProvider federatedIdp,
+                                                                                   Connection dbConnection)
+            throws OrganizationManagementException, SQLException, IdentityProviderManagementClientException {
+
+        OrganizationManager orgManager = IdpMgtServiceComponentHolder.getInstance().getOrganizationManager();
+        String tenantDomain = orgManager.resolveTenantDomain(orgId);
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+
+        return Optional.of(filterIdentityProperties(federatedIdp, getIdentityPropertiesByIdpId(dbConnection,
+                getIdentityProviderIdentifier(dbConnection, IdentityApplicationConstants.RESIDENT_IDP_RESERVED_NAME,
+                        tenantId), tenantId)));
+    }
+
+    private List<IdentityProviderProperty> mergePropertyLists(List<IdentityProviderProperty> list1,
+                                                              List<IdentityProviderProperty> list2) {
+        // Add items in the list2 to list1 if not already present
+        for (IdentityProviderProperty property : list2) {
+            if (list1.stream().noneMatch(p -> p.getName().equals(property.getName()))) {
+                list1.add(property);
+            }
+        }
+        return list1;
+
     }
 
     /**
@@ -3536,6 +3687,9 @@ public class IdPManagementDAO {
         } catch (ConnectorException e) {
             throw new IdentityProviderManagementException("Error occurred while retrieving the identity connector " +
                     "configurations.", e);
+        } catch (OrganizationManagementException e) {
+            throw new IdentityProviderManagementServerException("Error while retrieving organization information for " +
+                    "tenant : " + tenantDomain, e);
         } finally {
             if (dbConnectionInitialized) {
                 IdentityDatabaseUtil.closeAllConnections(dbConnection, rs, prepStmt);
@@ -3700,6 +3854,9 @@ public class IdPManagementDAO {
         } catch (ConnectorException e) {
             throw new IdentityProviderManagementException("Error occurred while retrieving the identity connector " +
                     "configurations.", e);
+        } catch (OrganizationManagementException e) {
+            throw new IdentityProviderManagementServerException("Error while retrieving organization information for " +
+                    "tenant : " + tenantDomain, e);
         } finally {
             if (dbConnectionInitialized) {
                 IdentityDatabaseUtil.closeAllConnections(dbConnection, rs, prepStmt);
@@ -4015,6 +4172,8 @@ public class IdPManagementDAO {
             throw new IdentityProviderManagementException("An error occurred while storing encrypted IDP secrets of " +
                     "Identity provider : " + identityProvider.getIdentityProviderName() + " in tenant : "
                     + IdentityTenantUtil.getTenantDomain(tenantId), e);
+        } catch (OrganizationManagementException e) {
+            throw new IdentityProviderManagementException("An error occurred while getting org details of idp", e);
         } finally {
             IdentityDatabaseUtil.closeAllConnections(dbConnection, null, prepStmt);
         }
@@ -4340,6 +4499,8 @@ public class IdPManagementDAO {
             throw new IdentityProviderManagementException("An error occurred while updating the secrets of the " +
                     "identity provider : " + currentIdentityProvider.getIdentityProviderName() + " in tenant : " +
                     IdentityTenantUtil.getTenantDomain(tenantId), e);
+        } catch (OrganizationManagementException e) {
+            throw new IdentityProviderManagementException("An error occurred while getting org details of idp", e);
         } finally {
             IdentityDatabaseUtil.closeAllConnections(dbConnection, rs, prepStmt1);
             IdentityDatabaseUtil.closeStatement(prepStmt2);
@@ -5829,7 +5990,7 @@ public class IdPManagementDAO {
 
     private List<IdentityProviderProperty> filterConnectorProperties(IdentityProviderProperty[] propertiesFromRequest,
                                                                      String tenantDomain)
-            throws ConnectorException {
+            throws ConnectorException, OrganizationManagementException {
 
         Map<String, IdentityProviderProperty> propertiesFromConnectors = getConnectorProperties(tenantDomain);
 
@@ -5838,7 +5999,8 @@ public class IdPManagementDAO {
 
         for (Map.Entry<String, IdentityProviderProperty> entry : propertiesFromConnectors.entrySet()) {
             IdentityProviderProperty propertyFromRequest = propertyMapFromRequest.get(entry.getKey());
-            if (propertyFromRequest != null && entry.getValue().getValue().equals(propertyFromRequest.getValue())) {
+            if (propertyFromRequest != null && entry.getValue().getValue().equals(propertyFromRequest.getValue()) &&
+                    !OrganizationManagementUtil.isOrganization(tenantDomain)) {
                 // If the value received from the update request is equal to the default value, remove the entry.
                 propertyMapFromRequest.remove(entry.getKey());
             }
