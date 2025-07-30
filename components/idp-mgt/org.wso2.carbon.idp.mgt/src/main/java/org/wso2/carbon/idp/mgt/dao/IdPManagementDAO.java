@@ -65,6 +65,7 @@ import org.wso2.carbon.identity.organization.management.service.util.Utils;
 import org.wso2.carbon.identity.organization.resource.hierarchy.traverse.service.OrgResourceResolverService;
 import org.wso2.carbon.identity.organization.resource.hierarchy.traverse.service.exception.OrgResourceHierarchyTraverseException;
 import org.wso2.carbon.identity.organization.resource.hierarchy.traverse.service.strategy.MergeAllAggregationStrategy;
+import org.wso2.carbon.identity.organization.service.invoker.exception.ServiceInvokerException;
 import org.wso2.carbon.identity.secret.mgt.core.exception.SecretManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementClientException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -126,6 +127,7 @@ import static org.wso2.carbon.idp.mgt.util.IdPManagementConstants.EMAIL_OTP_USE_
 import static org.wso2.carbon.idp.mgt.util.IdPManagementConstants.ID;
 import static org.wso2.carbon.idp.mgt.util.IdPManagementConstants.IS_TRUSTED_TOKEN_ISSUER;
 import static org.wso2.carbon.idp.mgt.util.IdPManagementConstants.MySQL;
+import static org.wso2.carbon.idp.mgt.util.IdPManagementConstants.PASSWORD_EXPIRY_RULES_KEY_PREFIX;
 import static org.wso2.carbon.idp.mgt.util.IdPManagementConstants.RESET_PROVISIONING_ENTITIES_ON_CONFIG_UPDATE;
 import static org.wso2.carbon.idp.mgt.util.IdPManagementConstants.SCOPE_LIST_PLACEHOLDER;
 import static org.wso2.carbon.idp.mgt.util.IdPManagementConstants.SQLConstants.DEFINED_BY_COLUMN;
@@ -3430,6 +3432,7 @@ public class IdPManagementDAO {
                     if (OrganizationManagementUtil.isOrganization(tenantDomain) &&
                             Utils.isLoginAndRegistrationConfigInheritanceEnabled(tenantDomain)) {
                         propertyList = resolveResidentIdpProperties(tenantDomain, federatedIdp, dbConnection);
+                        resolveSharedRoles(propertyList, tenantDomain);
                     }
                     // Populate non-existing properties with default values.
                     propertyList = resolveConnectorProperties(propertyList, tenantDomain);
@@ -3457,6 +3460,101 @@ public class IdPManagementDAO {
             } else {
                 IdentityDatabaseUtil.closeAllConnections(null, rs, prepStmt);
             }
+        }
+    }
+
+    /**
+     * Resolves shared roles for password expiry rules by converting main role IDs to shared role IDs
+     * for organization contexts. Removes rules where the main role doesn't have a corresponding shared role.
+     *
+     * @param propertyList List of identity provider properties to process.
+     * @param tenantDomain Tenant domain of the organization.
+     * @throws IdentityProviderManagementException If an error occurs while resolving shared roles.
+     */
+    private void resolveSharedRoles(List<IdentityProviderProperty> propertyList, String tenantDomain)
+            throws IdentityProviderManagementException {
+
+        // Return if no password expiry rules exist.
+        List<IdentityProviderProperty> passwordExpiryRules = propertyList.stream()
+                .filter(property -> property.getName().startsWith(PASSWORD_EXPIRY_RULES_KEY_PREFIX))
+                .collect(Collectors.toList());
+
+        if (passwordExpiryRules.isEmpty()) {
+            return;
+        }
+
+        // Extract main role IDs from password expiry rules related to roles.
+        List<String> mainRoleIds = passwordExpiryRules.stream()
+                .map(property -> property.getValue().split(","))
+                .filter(ruleTokens -> ruleTokens.length == 5 && "roles".equals(ruleTokens[2]))
+                .map(ruleTokens -> ruleTokens[4])
+                .filter(StringUtils::isNotBlank)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (mainRoleIds.isEmpty()) {
+            return;
+        }
+
+        try {
+//            Map<String, String> mainRoleToSharedRoleMap = IdpMgtServiceComponentHolder.getInstance()
+//                    .getRoleManagementServiceV2()
+//                    .getMainRoleToSharedRoleMappingsBySubOrg(mainRoleIds, tenantDomain);
+
+            Map<String, String> mainRoleToSharedRoleMap = IdpMgtServiceComponentHolder.getInstance()
+                    .getServiceInvokerService().invoke(
+                            "org.wso2.carbon.identity.role.v2.mgt.core.RoleManagementService",
+                            "getMainRoleToSharedRoleMappingsBySubOrg",
+                            new Class<?>[]{List.class, String.class},
+                            mainRoleIds,
+                            tenantDomain);
+
+            propertyList.removeIf(property -> {
+                if (!property.getName().startsWith(PASSWORD_EXPIRY_RULES_KEY_PREFIX)) {
+                    // Keep non-password expiry properties.
+                    return false;
+                }
+
+                String[] ruleTokens = property.getValue().split(",");
+                if (ruleTokens.length != 5 || !"roles".equals(ruleTokens[2])) {
+                    // Keep non-role rules or malformed rules.
+                    return false;
+                }
+
+                String mainRoleId = ruleTokens[4];
+                String sharedRoleId = mainRoleToSharedRoleMap.get(mainRoleId);
+                if (StringUtils.isNotEmpty(sharedRoleId)) {
+                    // Update the rule with the shared role ID.
+                    ruleTokens[4] = sharedRoleId;
+                    property.setValue(String.join(",", ruleTokens));
+                    // Keep the updated rule.
+                    return false;
+                } else {
+                    try {
+//                        if (!IdpMgtServiceComponentHolder.getInstance().getRoleManagementServiceV2().isExistingRole
+//                                (mainRoleId, tenantDomain)){
+//                            return true;
+//                        }
+                        boolean isExistingRole = IdpMgtServiceComponentHolder.getInstance().getServiceInvokerService()
+                                .invoke("org.wso2.carbon.identity.role.v2.mgt.core.RoleManagementService",
+                                        "isExistingRole",
+                                        new Class<?>[]{String.class, String.class},
+                                        mainRoleId,
+                                        tenantDomain);
+                        if (!isExistingRole){
+                            return true;
+                        }
+                    } catch (ServiceInvokerException e) {
+                        log.error("Error while checking if the main role ID: " + mainRoleId + " exists in tenant: "
+                                + tenantDomain, e);
+                        return false;
+                    }
+                    return false;
+                }
+            });
+        } catch (ServiceInvokerException e) {
+            throw new IdentityProviderManagementException(
+                    "Error while retrieving shared role mappings for main role IDs: " + mainRoleIds, e);
         }
     }
 
@@ -3538,15 +3636,23 @@ public class IdPManagementDAO {
     private List<IdentityProviderProperty> mergePropertyLists(List<IdentityProviderProperty> list1,
                                                               List<IdentityProviderProperty> list2) {
 
-        /* Filter properties that should not be inherited.
-         * startsWith is used since password expiery rules are in the format of
-         * passwordExpiry.rulex where x is the rule number.
-         */
+        // Filter properties that should not be inherited.
         list2 = list2.stream()
-                .filter(property -> !IdPManagementConstants.INHERITANCE_DISABLED_GOVERNANCE_PROPERTIES
-                        .stream()
-                        .anyMatch(disabledProp -> property.getName().startsWith(disabledProp)))
-                .collect(Collectors.toList());
+                .filter(property -> {
+                    if (IdPManagementConstants.INHERITANCE_DISABLED_GOVERNANCE_PROPERTIES.contains(
+                            property.getName())) {
+                        return false;
+                    }
+
+                    if (property.getName().startsWith("passwordExpiry.rule")) {
+                        String[] ruleTokens = property.getValue().split(",");
+                        if (Arrays.stream(ruleTokens).anyMatch(token -> "groups".equals(token))) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }).collect(Collectors.toList());
 
         for (IdentityProviderProperty property : list2) {
             if (list1.stream().noneMatch(p -> p.getName().equals(property.getName()))) {

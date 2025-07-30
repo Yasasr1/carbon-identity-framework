@@ -151,6 +151,8 @@ public class IdPManagementConstants {
     public static final String EMAIL_USERNAME_RECOVERY_PROPERTY = "Recovery.Notification.Username.Email.Enable";
     public static final String SMS_USERNAME_RECOVERY_PROPERTY = "Recovery.Notification.Username.SMS.Enable";
 
+    // Resident IdP inheritance related constants.
+    public static final String PASSWORD_EXPIRY_RULES_KEY_PREFIX = "passwordExpiry.rule";
     public static final List<String> INHERITED_FEDERATED_AUTHENTICATORS = List.of(
             IdentityApplicationConstants.Authenticator.SAML2SSO.NAME);
 
@@ -163,8 +165,7 @@ public class IdPManagementConstants {
             "Organization.SelfService.Enable",
             "Organization.SelfService.AdminEmailVerification",
             "Organization.SelfService.OnboardAdminToOrg",
-            "Organization.SelfService.EnableAutoLogin",
-            "passwordExpiry.rule");
+            "Organization.SelfService.EnableAutoLogin");
 
 
     public static class SQLConstants {

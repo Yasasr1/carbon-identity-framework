@@ -44,6 +44,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.identity.organization.resource.hierarchy.traverse.service.OrgResourceResolverService;
+import org.wso2.carbon.identity.organization.service.invoker.ServiceInvoker;
 import org.wso2.carbon.identity.role.mgt.core.RoleManagementService;
 import org.wso2.carbon.identity.secret.mgt.core.SecretManager;
 import org.wso2.carbon.identity.secret.mgt.core.SecretResolveManager;
@@ -439,6 +440,25 @@ public class IdPManagementServiceComponent {
 
         IdpMgtServiceComponentHolder.getInstance().getIdpMgtListeners().remove(identityProviderMgtListenerService);
     }
+
+    @Reference(
+            name = "org.wso2.carbon.identity.organization.service.invoker.ServiceInvokerComponent",
+            service = ServiceInvoker.class,
+            cardinality = ReferenceCardinality.OPTIONAL,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetServiceInvokerService")
+    protected void setServiceInvokerService(ServiceInvoker serviceInvoker) {
+
+        IdpMgtServiceComponentHolder.getInstance().setServiceInvokerService(serviceInvoker);
+        log.debug("ServiceInvoker set in IdPManagementServiceComponent bundle.");
+    }
+
+    protected void unsetServiceInvokerService(ServiceInvoker serviceInvoker) {
+
+        IdpMgtServiceComponentHolder.getInstance().setServiceInvokerService(null);
+        log.debug("ServiceInvoker unset in IdPManagementServiceComponent bundle.");
+    }
+
 
     public static Collection<IdentityProviderMgtListener> getIdpMgtListeners() {
         return IdpMgtServiceComponentHolder.getInstance().getIdpMgtListeners();

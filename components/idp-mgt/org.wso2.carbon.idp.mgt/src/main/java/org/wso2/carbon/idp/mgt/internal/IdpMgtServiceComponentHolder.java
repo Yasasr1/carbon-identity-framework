@@ -26,6 +26,7 @@ import org.wso2.carbon.identity.core.ConnectorConfig;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.identity.organization.resource.hierarchy.traverse.service.OrgResourceResolverService;
+import org.wso2.carbon.identity.organization.service.invoker.ServiceInvoker;
 import org.wso2.carbon.identity.role.mgt.core.RoleManagementService;
 import org.wso2.carbon.identity.secret.mgt.core.SecretManager;
 import org.wso2.carbon.identity.secret.mgt.core.SecretResolveManager;
@@ -61,6 +62,7 @@ public class IdpMgtServiceComponentHolder {
     private ActionManagementService actionManagementService;
     private OrganizationManager organizationManager;
     private OrgResourceResolverService orgResourceResolverService;
+    private ServiceInvoker serviceInvoker;
 
     private List<MetadataConverter> metadataConverters = new ArrayList<>();
 
@@ -251,5 +253,25 @@ public class IdpMgtServiceComponentHolder {
     public void setOrgResourceResolverService(OrgResourceResolverService orgResourceResolverService) {
 
         this.orgResourceResolverService = orgResourceResolverService;
+    }
+
+    /**
+     * Get the ServiceInvoker.
+     *
+     * @return ServiceInvoker instance.
+     */
+    public ServiceInvoker getServiceInvokerService() {
+
+        return serviceInvoker;
+    }
+
+    /**
+     * Set the ServiceInvoker.
+     *
+     * @param serviceInvoker ServiceInvoker instance.
+     */
+    public void setServiceInvokerService(ServiceInvoker serviceInvoker) {
+
+        this.serviceInvoker = serviceInvoker;
     }
 }

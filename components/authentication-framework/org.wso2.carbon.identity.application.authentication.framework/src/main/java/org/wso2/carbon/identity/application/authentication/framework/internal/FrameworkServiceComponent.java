@@ -369,8 +369,13 @@ public class FrameworkServiceComponent {
         FrameworkServiceDataHolder.getInstance().setSkipLocalUserSearchForAuthenticationFlowHandlersEnabled
                 (FrameworkUtils.isSkipLocalUserSearchForAuthenticationFlowHandlersEnabled());
 
-        bundleContext.registerService(ApplicationAuthenticationService.class.getName(), new
-                ApplicationAuthenticationService(), null);
+        try {
+
+            bundleContext.registerService(ApplicationAuthenticationService.class.getName(), new
+                    ApplicationAuthenticationService(), null);
+        } catch (Exception e) {
+            log.error("Error", e);
+        }
         // Note : DO NOT add any activation related code below this point,
         // to make sure the server doesn't start up if any activation failures
     }
