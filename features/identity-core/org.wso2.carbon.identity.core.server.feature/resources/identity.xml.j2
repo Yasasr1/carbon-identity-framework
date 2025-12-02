@@ -3997,6 +3997,7 @@
     <EnableLegacySaaSAuthentication>{{authentication.enable_legacy_saas_mode | default(false)}}</EnableLegacySaaSAuthentication>
 
     <EnablePerUserFunctionalityLocking>{{user.enable_per_user_functionality_locking}}</EnablePerUserFunctionalityLocking>
+    <ResolveTenantDomainFromUsername>{{resolve_tenant_domain_from_username.enabled | default('false')}}</ResolveTenantDomainFromUsername>
 
     <TenantContextsToRewrite>
         <WebApp>
