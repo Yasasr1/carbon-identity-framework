@@ -67,6 +67,8 @@ public class AuthenticatedUser extends User {
     private String sharedUserId;
     private String userSharedOrganizationId;
     private ImpersonatedUser impersonatedUser;
+    private boolean isSharedUser;
+    private String residentUserId;
 
     /**
      * Instantiates an AuthenticatedUser
@@ -105,6 +107,8 @@ public class AuthenticatedUser extends User {
         this.accessingOrganization = authenticatedUser.getAccessingOrganization();
         this.userResidentOrganization = authenticatedUser.getUserResidentOrganization();
         this.impersonatedUser = authenticatedUser.getImpersonatedUser();
+        this.isSharedUser = authenticatedUser.isSharedUser();
+        this.residentUserId = authenticatedUser.getResidentUserId();
     }
 
     public AuthenticatedUser(org.wso2.carbon.user.core.common.User user) {
@@ -601,5 +605,25 @@ public class AuthenticatedUser extends User {
     public void setImpersonatedUser(ImpersonatedUser impersonatedUser) {
 
         this.impersonatedUser = impersonatedUser;
+    }
+
+    public boolean isSharedUser() {
+
+        return isSharedUser;
+    }
+
+    public void setSharedUser(boolean sharedUser) {
+
+        isSharedUser = sharedUser;
+    }
+
+    public String getResidentUserId() {
+
+        return residentUserId;
+    }
+
+    public void setResidentUserId(String residentUserId) {
+
+        this.residentUserId = residentUserId;
     }
 }
