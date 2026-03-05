@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2015-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -54,6 +54,7 @@ import org.wso2.carbon.identity.core.handler.HandlerComparator;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.functions.library.mgt.FunctionLibraryManagementService;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
+import org.wso2.carbon.identity.organization.management.organization.user.sharing.OrganizationUserSharingService;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManagementInitialize;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.identity.role.v2.mgt.core.RoleManagementService;
@@ -127,6 +128,7 @@ public class FrameworkServiceDataHolder {
     private SecretResolveManager secretConfigManager;
     private UserDefinedAuthenticatorService userDefinedAuthenticatorService;
     private OrganizationDiscoveryHandler organizationDiscoveryHandler;
+    private OrganizationUserSharingService organizationUserSharingService;
 
     private FrameworkServiceDataHolder() {
 
@@ -853,5 +855,25 @@ public class FrameworkServiceDataHolder {
     public void setOrganizationDiscoveryHandler(OrganizationDiscoveryHandler organizationDiscoveryHandler) {
 
         this.organizationDiscoveryHandler = organizationDiscoveryHandler;
+    }
+
+    /**
+     * Get {@link OrganizationUserSharingService}.
+     *
+     * @return Instance of {@link OrganizationUserSharingService}.
+     */
+    public OrganizationUserSharingService getOrganizationUserSharingService() {
+
+        return organizationUserSharingService;
+    }
+
+    /**
+     * Set {@link OrganizationUserSharingService}.
+     *
+     * @param organizationUserSharingService Instance of {@link OrganizationUserSharingService}.
+     */
+    public void setOrganizationUserSharingService(OrganizationUserSharingService organizationUserSharingService) {
+
+        this.organizationUserSharingService = organizationUserSharingService;
     }
 }

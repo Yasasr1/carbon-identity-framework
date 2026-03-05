@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2013-2026, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -123,8 +123,9 @@ public abstract class AbstractApplicationAuthenticator implements ApplicationAut
                         context.setRetrying(false);
                     }
                     processAuthenticationResponse(request, response, context);
-                    if (this instanceof LocalApplicationAuthenticator) {
-                        if (!context.getSequenceConfig().getApplicationConfig().isSaaSApp()) {
+                    if (this instanceof LocalApplicationAuthenticator &&
+                            !context.getSequenceConfig().getApplicationConfig().isSaaSApp() &&
+                            !context.getSubject().isSharedUser()) {
                             String userDomain = context.getSubject().getTenantDomain();
                             String tenantDomain = context.getTenantDomain();
                             if (!StringUtils.equals(userDomain, tenantDomain)) {
@@ -134,7 +135,6 @@ public abstract class AbstractApplicationAuthenticator implements ApplicationAut
                                         ErrorMessages.MISMATCHING_TENANT_DOMAIN.getMessage(),
                                         context.getSubject());
                             }
-                        }
                     }
                     request.setAttribute(FrameworkConstants.REQ_ATTR_HANDLED, true);
                     context.setProperty(FrameworkConstants.LAST_FAILED_AUTHENTICATOR, null);

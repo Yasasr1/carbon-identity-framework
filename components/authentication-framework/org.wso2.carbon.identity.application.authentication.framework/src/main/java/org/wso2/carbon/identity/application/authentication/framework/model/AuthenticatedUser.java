@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2013-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -67,6 +67,7 @@ public class AuthenticatedUser extends User {
     private String sharedUserId;
     private String userSharedOrganizationId;
     private ImpersonatedUser impersonatedUser;
+    private boolean isSharedUser;
 
     /**
      * Instantiates an AuthenticatedUser
@@ -105,6 +106,7 @@ public class AuthenticatedUser extends User {
         this.accessingOrganization = authenticatedUser.getAccessingOrganization();
         this.userResidentOrganization = authenticatedUser.getUserResidentOrganization();
         this.impersonatedUser = authenticatedUser.getImpersonatedUser();
+        this.isSharedUser = authenticatedUser.isSharedUser();
     }
 
     public AuthenticatedUser(org.wso2.carbon.user.core.common.User user) {
@@ -601,5 +603,26 @@ public class AuthenticatedUser extends User {
     public void setImpersonatedUser(ImpersonatedUser impersonatedUser) {
 
         this.impersonatedUser = impersonatedUser;
+    }
+
+    /**
+     * Returns whether this authenticated user is a shared user or not.
+     * This is set to true when a user authenticates to an organization where the user is shared.
+     *
+     * @return true if the authenticated user is a shared user, false otherwise
+     */
+    public boolean isSharedUser() {
+
+        return isSharedUser;
+    }
+
+    /**
+     * Sets the flag to indicate whether this authenticated user is a shared user or not.
+     *
+     * @param sharedUser true if the authenticated user is a shared user, false otherwise
+     */
+    public void setSharedUser(boolean sharedUser) {
+
+        isSharedUser = sharedUser;
     }
 }
