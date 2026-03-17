@@ -1192,10 +1192,15 @@ public class DefaultRequestCoordinator extends AbstractRequestCoordinator implem
             boolean isMatchingTenantDomain = StringUtils.equals(
                     sessionContext.getProperty(FrameworkUtils.TENANT_DOMAIN).toString(),
                     context.getLoginTenantDomain());
-            if (!isMatchingTenantDomain) {
-                request.setAttribute(FrameworkConstants.REMOVE_COMMONAUTH_COOKIE, true);
-                return null;
-            }
+            // TODO: Need to handle the following case;
+            /* When the existing session context is for a user who was authenticated to the root org app in the root
+            org, and the current request comes for a sub-org app/shared app. Need to check if the user is shared to the
+            accessing sub-org and make sure the session context is not removed.
+             */
+//            if (!isMatchingTenantDomain) {
+//                request.setAttribute(FrameworkConstants.REMOVE_COMMONAUTH_COOKIE, true);
+//                return null;
+//            }
         }
 
         return sessionContext;

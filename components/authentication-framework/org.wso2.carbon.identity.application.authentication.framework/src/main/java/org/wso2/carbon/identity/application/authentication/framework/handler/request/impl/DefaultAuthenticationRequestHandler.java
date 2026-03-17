@@ -393,7 +393,7 @@ public class DefaultAuthenticationRequestHandler implements AuthenticationReques
                 String userTenantDomain = sequenceConfig.getAuthenticatedUser().getTenantDomain();
                 if (StringUtils.isNotEmpty(userTenantDomain)) {
                     if (StringUtils.isNotEmpty(spTenantDomain) && !spTenantDomain.equals
-                            (userTenantDomain)) {
+                            (userTenantDomain) && !sequenceConfig.getAuthenticatedUser().isSharedUser()) {
                         throw new FrameworkException(ERROR_MISMATCHING_TENANT_DOMAIN.getCode(),
                                 ERROR_MISMATCHING_TENANT_DOMAIN.getMessage());
                     }

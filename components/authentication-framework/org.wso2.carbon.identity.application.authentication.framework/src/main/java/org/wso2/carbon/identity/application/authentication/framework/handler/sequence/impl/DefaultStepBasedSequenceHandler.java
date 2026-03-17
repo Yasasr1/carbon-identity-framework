@@ -450,6 +450,48 @@ public class DefaultStepBasedSequenceHandler implements StepBasedSequenceHandler
         if (!authenticatedUserAttributes.isEmpty()) {
             sequenceConfig.getAuthenticatedUser().setUserAttributes(authenticatedUserAttributes);
         }
+
+        /* If the authenticated user is identified as a shared user by the SharedUserIdentifierExecutor,
+        * we need to enrich the authenticated user object with the shared user details to be used in the subsequent
+        * steps.
+        */
+        enrichSharedUserDetails(context);
+    }
+
+    private static void enrichSharedUserDetails(AuthenticationContext context) {
+
+        // If the authenticated user is already identified as a shared user,
+        // there is no need to enrich the details again.
+        if (context.getSequenceConfig().getAuthenticatedUser().isSharedUser()) {
+            return;
+        }
+
+        for (StepConfig stepConfig: context.getSequenceConfig().getStepMap().values()) {
+            if (stepConfig.getAuthenticatedUser() != null &&
+                    stepConfig.getAuthenticatedUser().isSharedUser() &&
+                    "SharedUserIdentifierExecutor".equals(
+                            stepConfig.getAuthenticatedAutenticator().getName())) {
+                AuthenticatedUser authenticatedUser = context.getSequenceConfig().getAuthenticatedUser();
+                authenticatedUser.setSharedUser(true);
+                authenticatedUser.setUserResidentOrganization(
+                        stepConfig.getAuthenticatedUser().getUserResidentOrganization());
+                authenticatedUser.setAccessingOrganization(
+                        stepConfig.getAuthenticatedUser().getAccessingOrganization());
+                context.getSequenceConfig().setAuthenticatedUser(authenticatedUser);
+
+                // Enrich the authenticated user in the current authenticated local idp data as well.
+                if (context.getCurrentAuthenticatedIdPs() != null) {
+                    AuthenticatedUser currentLocallyAuthenticatedUser =
+                            context.getCurrentAuthenticatedIdPs().get("LOCAL").getUser();
+                    currentLocallyAuthenticatedUser.setSharedUser(true);
+                    currentLocallyAuthenticatedUser.setUserResidentOrganization(
+                            stepConfig.getAuthenticatedUser().getUserResidentOrganization());
+                    currentLocallyAuthenticatedUser.setAccessingOrganization(
+                            stepConfig.getAuthenticatedUser().getAccessingOrganization());
+                    context.getCurrentAuthenticatedIdPs().get("LOCAL").setUser(currentLocallyAuthenticatedUser);
+                }
+            }
+        }
     }
 
     /**

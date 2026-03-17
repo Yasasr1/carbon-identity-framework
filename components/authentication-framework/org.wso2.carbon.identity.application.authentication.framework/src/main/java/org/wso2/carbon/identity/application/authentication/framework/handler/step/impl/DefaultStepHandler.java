@@ -40,6 +40,7 @@ import org.wso2.carbon.identity.application.authentication.framework.config.mode
 import org.wso2.carbon.identity.application.authentication.framework.config.model.StepConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthHistory;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
+import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContextWrapper;
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.DuplicatedAuthUserException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
@@ -802,12 +803,18 @@ public class DefaultStepHandler implements StepHandler {
         try {
             context.setAuthenticatorProperties(getAuthenticatorPropertyMap(authenticator, context));
             AuthenticatorFlowStatus status;
+            context = new AuthenticationContextWrapper(context);
             if (isAuthenticationRequired) {
                 status = authenticator.process(request, response, context);
             } else {
                 // If the authenticator does not require authentication based on the assertion, we can skip the process.
                 status = AuthenticatorFlowStatus.SUCCESS_COMPLETED;
             }
+
+            // Unwrap the context before proceeding.
+            // Some post authentication handlers rely on context.getTenantDomain to return sp/idp tenant domain.
+            // And defaultStepHandler has logic to resolve local idp by context tenant domain after authentication.
+            context = ((AuthenticationContextWrapper) context).getWrappedContext();
             request.setAttribute(FrameworkConstants.RequestParams.FLOW_STATUS, status);
             /* If this is an authentication initiation and the authenticator supports API based authentication
              we need to send the auth initiation data in order to support performing API based authentication.*/
@@ -1140,6 +1147,7 @@ public class DefaultStepHandler implements StepHandler {
     protected void populateStepConfigWithAuthenticationDetails(StepConfig stepConfig, AuthenticatedIdPData
             authenticatedIdPData, AuthenticatorConfig authenticatedStepIdp) {
 
+        // TODO: handle setting the shared user details in step 1
         stepConfig.setAuthenticatedUser(authenticatedIdPData.getUser());
         stepConfig.setAuthenticatedIdP(authenticatedIdPData.getIdpName());
         stepConfig.setAuthenticatedAutenticator(authenticatedStepIdp);
