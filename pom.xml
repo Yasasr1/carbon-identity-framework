@@ -1783,6 +1783,12 @@
                 <artifactId>nashorn-core</artifactId>
                 <version>${openjdk.nashorn.version}</version>
             </dependency>
+            <dependency>
+                <groupId>de.ruedigermoeller</groupId>
+                <artifactId>fst</artifactId>
+                <version>${de.ruedigermoeller.fst.version}</version>
+                <scope>provided</scope>
+            </dependency>
 
             <!-- Testing related dependencies -->
             <dependency>
@@ -2373,6 +2379,7 @@
         <com.google.api.http.clients.osgi.version.range>[1.41.2,1.44.0)</com.google.api.http.clients.osgi.version.range>
         <org.wso2.orbit.io.opencensus.version>0.31.1.wso2v3</org.wso2.orbit.io.opencensus.version>
         <org.wso2.orbit.io.grpc.version>1.59.0.wso2v1</org.wso2.orbit.io.grpc.version>
+        <de.ruedigermoeller.fst.version>2.56</de.ruedigermoeller.fst.version>
     </properties>
 
     <build>
