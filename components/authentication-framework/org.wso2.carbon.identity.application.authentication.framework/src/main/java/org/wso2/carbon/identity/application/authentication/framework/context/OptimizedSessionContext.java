@@ -19,9 +19,9 @@
 package org.wso2.carbon.identity.application.authentication.framework.context;
 
 import org.apache.commons.lang.StringUtils;
-import org.nustaq.serialization.annotations.Version;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nustaq.serialization.annotations.Version;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.OptimizedSequenceConfig;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.SequenceConfig;
