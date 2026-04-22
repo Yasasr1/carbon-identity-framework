@@ -71,31 +71,36 @@ public class FlowMgtConfigUtils {
 
     private static Set<String> loadServerDefaultEnabledFlows() {
 
-        Set<String> defaultEnabledFlows = new HashSet<>();
-        OMElement flowExecutionElement = IdentityConfigParser.getInstance()
-                .getConfigElement(Constants.FlowConfigConstants.FLOW_EXECUTION_CONFIG);
-        if (flowExecutionElement == null) {
-            LOG.debug("No flow execution configuration found in identity.xml");
-            return defaultEnabledFlows;
-        }
-        Iterator<OMElement> defaultEnabledFlowsIt = flowExecutionElement
-                .getChildrenWithLocalName(Constants.FlowConfigConstants.DEFAULT_ENABLED_FLOWS_CONFIG);
-        if (!defaultEnabledFlowsIt.hasNext()) {
-            return defaultEnabledFlows;
-        }
-        OMElement defaultEnabledFlowsElement = defaultEnabledFlowsIt.next();
-        Iterator<OMElement> flowTypeElements = defaultEnabledFlowsElement
-                .getChildrenWithLocalName(Constants.FlowConfigConstants.FLOW_TYPE_ELEMENT);
-        while (flowTypeElements.hasNext()) {
-            String flowType = flowTypeElements.next().getText();
-            if (StringUtils.isNotBlank(flowType)) {
-                defaultEnabledFlows.add(flowType.trim());
+        try {
+            Set<String> defaultEnabledFlows = new HashSet<>();
+            OMElement flowExecutionElement = IdentityConfigParser.getInstance()
+                    .getConfigElement(Constants.FlowConfigConstants.FLOW_EXECUTION_CONFIG);
+            if (flowExecutionElement == null) {
+                LOG.debug("No flow execution configuration found in identity.xml");
+                return defaultEnabledFlows;
             }
+            Iterator<OMElement> defaultEnabledFlowsIt = flowExecutionElement
+                    .getChildrenWithLocalName(Constants.FlowConfigConstants.DEFAULT_ENABLED_FLOWS_CONFIG);
+            if (!defaultEnabledFlowsIt.hasNext()) {
+                return defaultEnabledFlows;
+            }
+            OMElement defaultEnabledFlowsElement = defaultEnabledFlowsIt.next();
+            Iterator<OMElement> flowTypeElements = defaultEnabledFlowsElement
+                    .getChildrenWithLocalName(Constants.FlowConfigConstants.FLOW_TYPE_ELEMENT);
+            while (flowTypeElements.hasNext()) {
+                String flowType = flowTypeElements.next().getText();
+                if (StringUtils.isNotBlank(flowType)) {
+                    defaultEnabledFlows.add(flowType.trim());
+                }
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Loaded server default enabled flows: " + defaultEnabledFlows);
+            }
+            return Collections.unmodifiableSet(defaultEnabledFlows);
+        } catch (Exception e) {
+            LOG.debug("Could not load server default enabled flows from identity.xml: " + e.getMessage());
+            return Collections.emptySet();
         }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Loaded server default enabled flows: " + defaultEnabledFlows);
-        }
-        return Collections.unmodifiableSet(defaultEnabledFlows);
     }
 
     /**
