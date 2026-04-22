@@ -42,12 +42,13 @@ public class FlowResolveCacheKey extends CacheKey {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FlowResolveCacheKey that = (FlowResolveCacheKey) o;
-        return tenantId.equals(that.tenantId) && flowType.equals(that.flowType);
+        return java.util.Objects.equals(tenantId, that.tenantId)
+                && java.util.Objects.equals(flowType, that.flowType);
     }
 
     @Override
     public int hashCode() {
 
-        return 31 * tenantId.hashCode() + flowType.hashCode();
+        return 31 * java.util.Objects.hashCode(tenantId) + java.util.Objects.hashCode(flowType);
     }
 }
