@@ -102,6 +102,7 @@ import org.wso2.carbon.identity.application.authentication.framework.internal.Fr
 import org.wso2.carbon.identity.application.authentication.framework.internal.FrameworkServiceDataHolder;
 import org.wso2.carbon.identity.application.authentication.framework.internal.core.ApplicationAuthenticatorManager;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedIdPData;
+import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedOrgData;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationError;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationFrameworkWrapper;
@@ -1302,11 +1303,36 @@ public class FrameworkUtils {
     public static void addSessionContextToCache(String key, SessionContext sessionContext, String tenantDomain,
                                                 String loginTenantDomain) {
 
+        addSessionContextToCache(key, sessionContext, tenantDomain, loginTenantDomain, null);
+    }
+
+    /**
+     * Adds the given session context to the session context cache. When an {@code orgId} is provided and the
+     * session context holds an {@link AuthenticatedOrgData} entry for that organization, the authenticated
+     * sequences of that organization are used for cleanup (clearing user attributes and the authentication
+     * graph). Otherwise, the top-level authenticated sequences of the session context are used.
+     *
+     * @param key               Session context cache key.
+     * @param sessionContext    Session context to be cached.
+     * @param tenantDomain      Application tenant domain used to resolve session timeout configurations.
+     * @param loginTenantDomain Login tenant domain under which the cache entry is stored.
+     * @param orgId             Organization id used to look up authenticated sequences from
+     *                          {@link SessionContext#getAuthenticatedOrgData()}.
+     */
+    public static void addSessionContextToCache(String key, SessionContext sessionContext, String tenantDomain,
+                                                String loginTenantDomain, String orgId) {
+
         SessionContextCacheKey cacheKey = new SessionContextCacheKey(key);
         SessionContextCacheEntry cacheEntry = new SessionContextCacheEntry();
         cacheEntry.setContextIdentifier(key);
 
-        Map<String, SequenceConfig> seqData = sessionContext.getAuthenticatedSequences();
+        Map<String, SequenceConfig> seqData;
+        if (orgId != null && sessionContext.getAuthenticatedOrgData() != null
+                && sessionContext.getAuthenticatedOrgData().get(orgId) != null) {
+            seqData = sessionContext.getAuthenticatedOrgData().get(orgId).getAuthenticatedSequences();
+        } else {
+            seqData = sessionContext.getAuthenticatedSequences();
+        }
         if (seqData != null) {
             for (Entry<String, SequenceConfig> entry : seqData.entrySet()) {
                 if (entry.getValue() != null) {
