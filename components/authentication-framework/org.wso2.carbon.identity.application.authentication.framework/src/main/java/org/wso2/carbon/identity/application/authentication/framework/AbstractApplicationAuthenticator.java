@@ -34,7 +34,6 @@ import org.wso2.carbon.identity.application.authentication.framework.config.mode
 import org.wso2.carbon.identity.application.authentication.framework.config.model.StepConfig;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.graph.AuthenticationGraph;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
-import org.wso2.carbon.identity.application.authentication.framework.context.SharedUserAuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.LogoutFailedException;
@@ -129,7 +128,7 @@ public abstract class AbstractApplicationAuthenticator implements ApplicationAut
                             String userDomain = context.getSubject().getTenantDomain();
                             String tenantDomain = context.getTenantDomain();
                             if (!StringUtils.equals(userDomain, tenantDomain) &&
-                                    !(context instanceof SharedUserAuthenticationContext)) {
+                                    FrameworkUtils.getSharedUserIdentifiedInSequence(context).isEmpty()) {
                                 context.setProperty(FrameworkConstants.USER_TENANT_DOMAIN_MISMATCH, true);
                                 throw new AuthenticationFailedException(
                                         ErrorMessages.MISMATCHING_TENANT_DOMAIN.getCode(),

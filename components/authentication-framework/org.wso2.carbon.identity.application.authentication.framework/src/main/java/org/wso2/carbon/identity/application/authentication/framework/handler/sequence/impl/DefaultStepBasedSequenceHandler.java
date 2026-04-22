@@ -62,6 +62,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -472,19 +473,25 @@ public class DefaultStepBasedSequenceHandler implements StepBasedSequenceHandler
             return;
         }
 
-        for (StepConfig stepConfig : context.getSequenceConfig().getStepMap().values()) {
-            if (FrameworkConstants.SHARED_USER_IDENTIFIER_HANDLER.equals(
-                    stepConfig.getAuthenticatedAutenticator().getName()) &&
-                    stepConfig.getAuthenticatedUser() != null && stepConfig.getAuthenticatedUser().isSharedUser()) {
-                AuthenticatedUser authenticatedUser = context.getSequenceConfig().getAuthenticatedUser();
-                authenticatedUser.setSharedUser(true);
-                authenticatedUser.setUserResidentOrganization(
-                        stepConfig.getAuthenticatedUser().getUserResidentOrganization());
-                authenticatedUser.setAccessingOrganization(
-                        stepConfig.getAuthenticatedUser().getAccessingOrganization());
-                context.getSequenceConfig().setAuthenticatedUser(authenticatedUser);
-            }
+        Optional<AuthenticatedUser> sharedUserIdentifiedInSequence =
+                FrameworkUtils.getSharedUserIdentifiedInSequence(context);
+        if (sharedUserIdentifiedInSequence.isPresent()) {
+            AuthenticatedUser authenticatedUser =
+                    getEnrichedAuthenticatedUser(context, sharedUserIdentifiedInSequence.get());
+            context.getSequenceConfig().setAuthenticatedUser(authenticatedUser);
         }
+    }
+
+    private AuthenticatedUser getEnrichedAuthenticatedUser(AuthenticationContext context,
+                                                          AuthenticatedUser sharedUserIdentifiedInSequence) {
+
+        AuthenticatedUser authenticatedUser = context.getSequenceConfig().getAuthenticatedUser();
+        authenticatedUser.setSharedUser(true);
+        authenticatedUser.setUserResidentOrganization(sharedUserIdentifiedInSequence
+                .getUserResidentOrganization());
+        authenticatedUser.setAccessingOrganization(sharedUserIdentifiedInSequence.getAccessingOrganization());
+        authenticatedUser.setSharedUserId(sharedUserIdentifiedInSequence.getSharedUserId());
+        return authenticatedUser;
     }
 
     private void enrichAuthenticatedLocalIdp(AuthenticationContext context) {
@@ -495,20 +502,18 @@ public class DefaultStepBasedSequenceHandler implements StepBasedSequenceHandler
             return;
         }
 
-        for (StepConfig stepConfig : context.getSequenceConfig().getStepMap().values()) {
-            if (FrameworkConstants.SHARED_USER_IDENTIFIER_HANDLER.equals(
-                    stepConfig.getAuthenticatedAutenticator().getName()) &&
-                    stepConfig.getAuthenticatedUser() != null && stepConfig.getAuthenticatedUser().isSharedUser()) {
-                AuthenticatedUser authenticatedIdpUser =
-                        context.getCurrentAuthenticatedIdPs().get(FrameworkConstants.LOCAL_IDP_NAME).getUser();
-                authenticatedIdpUser.setSharedUser(true);
-                authenticatedIdpUser.setUserResidentOrganization(
-                        stepConfig.getAuthenticatedUser().getUserResidentOrganization());
-                authenticatedIdpUser.setAccessingOrganization(
-                        stepConfig.getAuthenticatedUser().getAccessingOrganization());
-                context.getCurrentAuthenticatedIdPs().get(FrameworkConstants.LOCAL_IDP_NAME).setUser(
-                        authenticatedIdpUser);
-            }
+        Optional<AuthenticatedUser> sharedUserIdentifiedInSequence =
+                FrameworkUtils.getSharedUserIdentifiedInSequence(context);
+        if (sharedUserIdentifiedInSequence.isPresent()) {
+            AuthenticatedUser authenticatedIdpUser =
+                    context.getCurrentAuthenticatedIdPs().get(FrameworkConstants.LOCAL_IDP_NAME).getUser();
+            authenticatedIdpUser.setSharedUser(true);
+            authenticatedIdpUser.setUserResidentOrganization(
+                    sharedUserIdentifiedInSequence.get().getUserResidentOrganization());
+            authenticatedIdpUser.setAccessingOrganization(
+                    sharedUserIdentifiedInSequence.get().getAccessingOrganization());
+            authenticatedIdpUser.setSharedUserId(sharedUserIdentifiedInSequence.get().getSharedUserId());
+            context.getCurrentAuthenticatedIdPs().get(FrameworkConstants.LOCAL_IDP_NAME).setUser(authenticatedIdpUser);
         }
     }
 
@@ -542,7 +547,6 @@ public class DefaultStepBasedSequenceHandler implements StepBasedSequenceHandler
         context.setSequenceConfig(sequenceConfig);
         context.setRequestType(requestType);
         context.setTenantDomain(tenantDomain);
-        context.setUserResidentTenantDomain(tenantDomain);
 
         Map<String, String> mappedAttributes = handleClaimMappings(stepConfig, context,
                 null, false);

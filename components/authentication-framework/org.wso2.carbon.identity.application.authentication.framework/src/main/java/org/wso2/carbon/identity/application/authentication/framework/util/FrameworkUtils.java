@@ -5138,4 +5138,27 @@ public class FrameworkUtils {
         return Boolean.parseBoolean(IdentityUtil.getProperty(
                 FrameworkConstants.Config.USE_RESIDENT_USER_ID_FOR_AUTHENTICATED_SHARED_USERS));
     }
+
+    /**
+     * Retrieves the shared authenticated user identified during the authentication sequence, if any.
+     * Iterates over the step configurations in the sequence and returns the authenticated user from
+     * the step handled by {@link FrameworkConstants#SHARED_USER_IDENTIFIER_HANDLER}, provided that
+     * the user is a shared user.
+     *
+     * @param context Authentication context containing the sequence configuration and step results.
+     * @return An {@link Optional} containing the shared {@link AuthenticatedUser} if one was identified
+     *         in the sequence, or an empty {@link Optional} otherwise.
+     */
+    public static Optional<AuthenticatedUser> getSharedUserIdentifiedInSequence(AuthenticationContext context) {
+
+        for (StepConfig stepConfig : context.getSequenceConfig().getStepMap().values()) {
+            if (FrameworkConstants.SHARED_USER_IDENTIFIER_HANDLER.equals(
+                    stepConfig.getAuthenticatedAutenticator().getName()) &&
+                    stepConfig.getAuthenticatedUser() != null && stepConfig.getAuthenticatedUser().isSharedUser()) {
+                return Optional.of(stepConfig.getAuthenticatedUser());
+            }
+        }
+
+        return Optional.empty();
+    }
 }

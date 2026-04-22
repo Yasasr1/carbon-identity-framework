@@ -54,6 +54,7 @@ import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataHandler;
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
 import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -748,6 +749,26 @@ public class DefaultClaimHandler implements ClaimHandler {
         AuthenticatedUser authenticatedUser = getAuthenticatedUser(stepConfig, context);
 
         String tenantDomain = authenticatedUser.getTenantDomain();
+        String authenticatedUserId = null;
+        try {
+           authenticatedUserId = authenticatedUser.getUserId();
+        } catch (UserIdNotFoundException e) {
+            throw new FrameworkException("User ID not available for user: " +
+                    authenticatedUser.getLoggableMaskedUserId(), e);
+        }
+
+        Optional<AuthenticatedUser> sharedUserIdentifiedInSequence =
+                FrameworkUtils.getSharedUserIdentifiedInSequence(context);
+        if (sharedUserIdentifiedInSequence.isPresent()) {
+            try {
+                tenantDomain = FrameworkServiceDataHolder.getInstance().getOrganizationManager()
+                        .resolveTenantDomain(sharedUserIdentifiedInSequence.get().getAccessingOrganization());
+                authenticatedUserId = sharedUserIdentifiedInSequence.get().getSharedUserId();
+            } catch (OrganizationManagementException e) {
+                throw new FrameworkException("Error while resolving tenant domain for organization: " +
+                        sharedUserIdentifiedInSequence.get().getAccessingOrganization());
+            }
+        }
 
         UserRealm realm = getUserRealm(tenantDomain);
 
@@ -773,7 +794,8 @@ public class DefaultClaimHandler implements ClaimHandler {
         Map<String, String> spRequestedClaims = new HashMap<>();
 
         // Retrieve all non-null user claim values against local claim uris.
-        allLocalClaims = retrieveAllNunNullUserClaimValues(authenticatedUser, claimManager, appConfig, userStore);
+        allLocalClaims = retrieveAllNunNullUserClaimValues(authenticatedUser, claimManager,
+                authenticatedUserId, userStore);
 
         boolean useAppAssociatedRoles = isAppRoleResolverExists() || !CarbonConstants.ENABLE_LEGACY_AUTHZ_RUNTIME;
         boolean isRoleClaimRequested = (requestedClaimMappings.get(FrameworkConstants.ROLES_CLAIM) != null);
@@ -954,8 +976,8 @@ public class DefaultClaimHandler implements ClaimHandler {
     }
 
     private Map<String, String> retrieveAllNunNullUserClaimValues(AuthenticatedUser authenticatedUser,
-            ClaimManager claimManager, ApplicationConfig appConfig,
-            AbstractUserStoreManager userStore) throws FrameworkException {
+            ClaimManager claimManager, String authenticatedUserId, AbstractUserStoreManager userStore)
+            throws FrameworkException {
 
         String tenantDomain = authenticatedUser.getTenantDomain();
 
@@ -969,7 +991,7 @@ public class DefaultClaimHandler implements ClaimHandler {
                 String claimURI = mapping.getClaim().getClaimUri();
                 localClaimURIs.add(claimURI);
             }
-            allLocalClaims = userStore.getUserClaimValuesWithID(authenticatedUser.getUserId(),
+            allLocalClaims = userStore.getUserClaimValuesWithID(authenticatedUserId,
                     localClaimURIs.toArray(new String[0]), null);
 
             if (allLocalClaims == null) {
@@ -984,9 +1006,6 @@ public class DefaultClaimHandler implements ClaimHandler {
                 throw new FrameworkException("Error occurred while getting all user claims for " +
                         authenticatedUser.getLoggableUserId() + " in " + tenantDomain, e);
             }
-        } catch (UserIdNotFoundException e) {
-            throw new FrameworkException("User id is not available for user: " +
-                    authenticatedUser.getLoggableMaskedUserId(), e);
         }
         return allLocalClaims;
     }
@@ -1148,8 +1167,22 @@ public class DefaultClaimHandler implements ClaimHandler {
                                                    AbstractUserStoreManager userStore,
                                                    AuthenticationContext context, String subjectURI) {
         try {
-            String value = userStore.getUserClaimValueWithID(authenticatedUser.getUserId(), subjectURI, null);
+            String authenticatedUserId = authenticatedUser.getUserId();
+            Optional<AuthenticatedUser> sharedUserIdentifiedInSequence =
+                    FrameworkUtils.getSharedUserIdentifiedInSequence(context);
+            /*
+             * If the user is a shared user, accessing org's user store will be resolved, and we need to search using
+             * shared user id.
+            */
+            if (sharedUserIdentifiedInSequence.isPresent()) {
+                authenticatedUserId = sharedUserIdentifiedInSequence.get().getSharedUserId();
+            }
+            String value = userStore.getUserClaimValueWithID(authenticatedUserId, subjectURI, null);
             if (value != null) {
+                // If the subject claim is configured to be user id, use the user id of resident user.
+                if (sharedUserIdentifiedInSequence.isPresent() && FrameworkConstants.USER_ID_CLAIM.equals(subjectURI)) {
+                    value = authenticatedUser.getUserId();
+                }
                 context.setProperty(SERVICE_PROVIDER_SUBJECT_CLAIM_VALUE, value);
                 if (log.isDebugEnabled()) {
                     log.debug("Setting \'ServiceProviderSubjectClaimValue\' property value " +

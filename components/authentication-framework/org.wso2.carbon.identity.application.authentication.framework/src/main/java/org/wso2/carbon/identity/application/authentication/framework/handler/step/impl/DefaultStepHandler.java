@@ -40,7 +40,6 @@ import org.wso2.carbon.identity.application.authentication.framework.config.mode
 import org.wso2.carbon.identity.application.authentication.framework.config.model.StepConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthHistory;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
-import org.wso2.carbon.identity.application.authentication.framework.context.SharedUserAuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.DuplicatedAuthUserException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
@@ -807,10 +806,6 @@ public class DefaultStepHandler implements StepHandler {
         }
 
         try {
-            if (isAuthenticatingUserShared(context) && !(context instanceof SharedUserAuthenticationContext)) {
-                context = new SharedUserAuthenticationContext(context);
-            }
-
             context.setAuthenticatorProperties(getAuthenticatorPropertyMap(authenticator, context));
             AuthenticatorFlowStatus status;
             if (isAuthenticationRequired) {
@@ -827,11 +822,6 @@ public class DefaultStepHandler implements StepHandler {
                 // If the authenticator does not require authentication based on the assertion, we can skip the process.
                 status = AuthenticatorFlowStatus.SUCCESS_COMPLETED;
             }
-
-            if (context instanceof SharedUserAuthenticationContext) {
-                context = ((SharedUserAuthenticationContext) context).getWrappedContext();
-            }
-
             request.setAttribute(FrameworkConstants.RequestParams.FLOW_STATUS, status);
             /* If this is an authentication initiation and the authenticator supports API based authentication
              we need to send the auth initiation data in order to support performing API based authentication.*/
@@ -1177,27 +1167,6 @@ public class DefaultStepHandler implements StepHandler {
         stepConfig.setAuthenticatedUser(authenticatedIdPData.getUser());
         stepConfig.setAuthenticatedIdP(authenticatedIdPData.getIdpName());
         stepConfig.setAuthenticatedAutenticator(authenticatedStepIdp);
-    }
-
-    /**
-     * Checks whether the authenticating user is identified as a shared user to the accessing organization via the
-     * SharedUserIdentifierExecutor in any of the previous steps of the authentication flow.
-     *
-     * @param context the authentication context
-     * @return true if the authenticating user is identified as a shared user, false otherwise
-     */
-    private boolean isAuthenticatingUserShared(AuthenticationContext context) {
-
-        Map<Integer, StepConfig> stepMap = context.getSequenceConfig().getStepMap();
-        for (StepConfig stepConfig : stepMap.values()) {
-            if (stepConfig.getAuthenticatedUser() != null && stepConfig.getAuthenticatedUser().isSharedUser() &&
-                    FrameworkConstants.SHARED_USER_IDENTIFIER_HANDLER.equals(
-                            stepConfig.getAuthenticatedAutenticator().getName())) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**

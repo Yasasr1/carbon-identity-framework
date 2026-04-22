@@ -24,6 +24,7 @@ import org.apache.commons.lang3.SerializationUtils;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorStateInfo;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.ExternalIdPConfig;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.SequenceConfig;
+import org.wso2.carbon.identity.application.authentication.framework.config.model.StepConfig;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedIdPData;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticationRequest;
@@ -62,7 +63,6 @@ public class AuthenticationContext extends MessageContext implements Serializabl
     private String externalIdPResourceId;
     private boolean rememberMe;
     private String tenantDomain;
-    private String userResidentTenantDomain;
     private int retryCount;
     private int currentPostAuthHandlerIndex = 0;
     private Map<String, String> authenticatorProperties = new HashMap<>();
@@ -973,17 +973,16 @@ public class AuthenticationContext extends MessageContext implements Serializabl
      */
     public String getUserResidentTenantDomain() {
 
-        return userResidentTenantDomain;
-    }
+        Map<Integer, StepConfig> stepMap = sequenceConfig.getStepMap();
+        for (StepConfig stepConfig : stepMap.values()) {
+            if (stepConfig.getAuthenticatedUser() != null && stepConfig.getAuthenticatedUser().isSharedUser() &&
+                    FrameworkConstants.SHARED_USER_IDENTIFIER_HANDLER.equals(
+                            stepConfig.getAuthenticatedAutenticator().getName())) {
+                return stepConfig.getAuthenticatedUser().getTenantDomain();
+            }
+        }
 
-    /**
-     * Set the tenant domain of the user who is going to log in.
-     *
-     * @param userResidentTenantDomain The tenant domain of the user who is going to log in.
-     */
-    public void setUserResidentTenantDomain(String userResidentTenantDomain) {
-
-        this.userResidentTenantDomain = userResidentTenantDomain;
+        return tenantDomain;
     }
 
     /**
