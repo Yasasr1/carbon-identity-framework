@@ -547,8 +547,8 @@ public class DefaultAuthenticationRequestHandler implements AuthenticationReques
             // session context may be null when cache expires therefore creating new cookie as well.
             if (sessionContext != null) {
                 analyticsSessionAction = FrameworkConstants.AnalyticsAttributes.SESSION_UPDATE;
+                String organizationId = null;
                 if (context.isSharedAppLogin() || context.isOrgApplicationLogin()) {
-                    String organizationId;
                     if (context.isSharedAppLogin()) {
                         organizationId = context.getOrganizationLoginData().getAccessingOrganization().getId();
                     } else {
@@ -659,7 +659,7 @@ public class DefaultAuthenticationRequestHandler implements AuthenticationReques
                 // TODO add to cache?
                 // store again. when replicate  cache is used. this may be needed.
                 FrameworkUtils.addSessionContextToCache(sessionContextKey, sessionContext, applicationTenantDomain,
-                        context.getLoginTenantDomain());
+                        context.getLoginTenantDomain(), organizationId);
                 // Since the session context is already available, audit log will be added with updated details.
                 addAuditLogs(SessionMgtConstants.UPDATE_SESSION_ACTION, authenticationResult.getSubject(),
                         sessionContextKey, FrameworkUtils.getCorrelation(),
@@ -670,8 +670,8 @@ public class DefaultAuthenticationRequestHandler implements AuthenticationReques
                 context.setProperty(FrameworkConstants.AnalyticsAttributes.IS_INITIAL_LOGIN, true);
 
                 sessionContext = new SessionContext();
+                String orgId = null;
                 if (context.isSharedAppLogin() || context.isOrgApplicationLogin()) {
-                    String orgId;
                     if (context.isSharedAppLogin()) {
                         orgId = context.getOrganizationLoginData().getAccessingOrganization().getId();
                         sessionContext.setAuthenticatedSharedAppOrgId(orgId);
@@ -728,7 +728,7 @@ public class DefaultAuthenticationRequestHandler implements AuthenticationReques
                 handleInboundSessionCreate(context.getRequestType(), sessionContextKey, sessionContext,
                         request, response, context);
                 FrameworkUtils.addSessionContextToCache(sessionContextKey, sessionContext, applicationTenantDomain,
-                        context.getLoginTenantDomain());
+                        context.getLoginTenantDomain(), orgId);
                 // The session context will be stored from here. Since the audit log will be logged as a storing
                 // operation.
                 addAuditLogs(SessionMgtConstants.STORE_SESSION_ACTION,
