@@ -106,6 +106,7 @@ public class AuthenticatedUser extends User {
         this.accessingOrganization = authenticatedUser.getAccessingOrganization();
         this.userResidentOrganization = authenticatedUser.getUserResidentOrganization();
         this.isSharedUser = authenticatedUser.isSharedUser();
+        this.sharedUserId = authenticatedUser.getSharedUserId();
         this.impersonatedUser = authenticatedUser.getImpersonatedUser();
     }
 

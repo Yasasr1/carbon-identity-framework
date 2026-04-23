@@ -265,10 +265,10 @@ public class PostAuthAssociationHandler extends AbstractPostAuthnHandler {
             }
         } catch (OrganizationManagementException e) {
             throw new PostAuthenticationFailedException(ERROR_CODE_DEFAULT.getErrorCode(),
-                    "Error while resolving the organization of the user: " + user.getUserName(), e);
+                    "Error while resolving the organization of the user: " + user.getLoggableMaskedUserId(), e);
         } catch (UserIdNotFoundException e) {
             throw new PostAuthenticationFailedException(ERROR_CODE_DEFAULT.getErrorCode(),
-                    "Authenticated user ID not found for: " + user.getUserName(), e);
+                    "Authenticated user ID not found for: " + user.getLoggableMaskedUserId(), e);
         }
     }
 

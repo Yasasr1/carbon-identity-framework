@@ -5133,6 +5133,12 @@ public class FrameworkUtils {
                 IdentityUtil.getProperty(FrameworkConstants.Config.MARK_STEP_COMPLETED_ON_INTERRUPT));
     }
 
+    /**
+     * Check whether to use the resident user id when a shared user logs in to a sub-organization through a
+     * federated authenticator while use local account attributes configuration is set to true in the application.
+     *
+     * @return true if enabled, false otherwise.
+     */
     public static boolean useResidentUserIdForAuthenticatedSharedUsers() {
 
         return Boolean.parseBoolean(IdentityUtil.getProperty(
@@ -5152,7 +5158,8 @@ public class FrameworkUtils {
     public static Optional<AuthenticatedUser> getSharedUserIdentifiedInSequence(AuthenticationContext context) {
 
         for (StepConfig stepConfig : context.getSequenceConfig().getStepMap().values()) {
-            if (FrameworkConstants.SHARED_USER_IDENTIFIER_HANDLER.equals(
+            if (stepConfig.getAuthenticatedAutenticator() != null &&
+                    FrameworkConstants.SHARED_USER_IDENTIFIER_HANDLER.equals(
                     stepConfig.getAuthenticatedAutenticator().getName()) &&
                     stepConfig.getAuthenticatedUser() != null && stepConfig.getAuthenticatedUser().isSharedUser()) {
                 return Optional.of(stepConfig.getAuthenticatedUser());

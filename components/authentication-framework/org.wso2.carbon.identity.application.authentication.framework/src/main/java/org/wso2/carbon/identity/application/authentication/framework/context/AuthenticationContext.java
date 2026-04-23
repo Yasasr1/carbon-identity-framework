@@ -976,6 +976,7 @@ public class AuthenticationContext extends MessageContext implements Serializabl
         Map<Integer, StepConfig> stepMap = sequenceConfig.getStepMap();
         for (StepConfig stepConfig : stepMap.values()) {
             if (stepConfig.getAuthenticatedUser() != null && stepConfig.getAuthenticatedUser().isSharedUser() &&
+                    stepConfig.getAuthenticatedAutenticator() != null &&
                     FrameworkConstants.SHARED_USER_IDENTIFIER_HANDLER.equals(
                             stepConfig.getAuthenticatedAutenticator().getName())) {
                 return stepConfig.getAuthenticatedUser().getTenantDomain();

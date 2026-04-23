@@ -1618,25 +1618,26 @@ public class DefaultStepHandler implements StepHandler {
      */
     private String resolveUserResidentOrganization(AuthenticatedUser authenticatedUser) throws FrameworkException {
 
-        // First, check for the user_org attribute. For shared user logins this claim is available.
-        for (Map.Entry<ClaimMapping, String> userAttribute : authenticatedUser.getUserAttributes().entrySet()) {
-            if (FrameworkConstants.USER_ORG_CLAIM.equals(userAttribute.getKey().getLocalClaim().getClaimUri())) {
-                return userAttribute.getValue();
+        if (MapUtils.isNotEmpty(authenticatedUser.getUserAttributes())) {
+            String orgIdValue = null;
+            String userOrganizationValue = null;
+            for (Map.Entry<ClaimMapping, String> userAttribute : authenticatedUser.getUserAttributes().entrySet()) {
+                String claimUri = userAttribute.getKey().getLocalClaim().getClaimUri();
+                // user_org has the highest priority.
+                if (FrameworkConstants.USER_ORG_CLAIM.equals(claimUri)) {
+                    return userAttribute.getValue();
+                }
+                if (FrameworkConstants.ORG_ID_CLAIM.equals(claimUri)) {
+                    orgIdValue = userAttribute.getValue();
+                } else if (FrameworkConstants.USER_ORGANIZATION_CLAIM.equals(claimUri)) {
+                    userOrganizationValue = userAttribute.getValue();
+                }
             }
-        }
-
-        // If user_org is not available, check for the org_id attribute.
-        for (Map.Entry<ClaimMapping, String> userAttribute : authenticatedUser.getUserAttributes().entrySet()) {
-            if (FrameworkConstants.ORG_ID_CLAIM.equals(userAttribute.getKey().getLocalClaim().getClaimUri())) {
-                return userAttribute.getValue();
+            if (orgIdValue != null) {
+                return orgIdValue;
             }
-        }
-
-        // If neither user_org nor org_id is available, check for the USER_ORGANIZATION_CLAIM.
-        for (Map.Entry<ClaimMapping, String> userAttribute : authenticatedUser.getUserAttributes().entrySet()) {
-            if (FrameworkConstants.USER_ORGANIZATION_CLAIM.equals(
-                    userAttribute.getKey().getLocalClaim().getClaimUri())) {
-                return userAttribute.getValue();
+            if (userOrganizationValue != null) {
+                return userOrganizationValue;
             }
         }
 

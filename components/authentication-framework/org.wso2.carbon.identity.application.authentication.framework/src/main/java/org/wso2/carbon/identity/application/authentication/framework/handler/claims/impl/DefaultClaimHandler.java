@@ -766,7 +766,7 @@ public class DefaultClaimHandler implements ClaimHandler {
                 authenticatedUserId = sharedUserIdentifiedInSequence.get().getSharedUserId();
             } catch (OrganizationManagementException e) {
                 throw new FrameworkException("Error while resolving tenant domain for organization: " +
-                        sharedUserIdentifiedInSequence.get().getAccessingOrganization());
+                        sharedUserIdentifiedInSequence.get().getAccessingOrganization(), e);
             }
         }
 
@@ -1179,7 +1179,12 @@ public class DefaultClaimHandler implements ClaimHandler {
             }
             String value = userStore.getUserClaimValueWithID(authenticatedUserId, subjectURI, null);
             if (value != null) {
-                // If the subject claim is configured to be user id, use the user id of resident user.
+                /*
+                 * For shared user login flows, returned ID token should contain the user id of the resident user if
+                 * the "sub" claim is configured to be the user ID. So the shared user ID resolved above should be
+                 * replaced with the resident user ID. For any other claims we can return the value set at
+                 * the relevant shared user profile.
+                 */
                 if (sharedUserIdentifiedInSequence.isPresent() && FrameworkConstants.USER_ID_CLAIM.equals(subjectURI)) {
                     value = authenticatedUser.getUserId();
                 }

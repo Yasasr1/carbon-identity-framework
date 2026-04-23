@@ -393,7 +393,7 @@
       "api.filters.single_character_wildcard": "_",
       "transport.https.client.provider_name": "",
       "identity_secret_manager.secret_value_clob_column_exists": false,
-      "use_resident_user_id_for_authenticated_shared_users": false
+      "use_resident_user_id_for_authenticated_shared_users.enabled": false
     },
     "IS_7.2.0": {
       "authenticationendpoint.authenticator_validation.enabled": false,
@@ -417,7 +417,7 @@
       "api.filters.single_character_wildcard": "_",
       "transport.https.client.provider_name": "",
       "identity_secret_manager.secret_value_clob_column_exists": false,
-      "use_resident_user_id_for_authenticated_shared_users": false
+      "use_resident_user_id_for_authenticated_shared_users.enabled": false
     }
   }
 }
