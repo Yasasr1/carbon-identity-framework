@@ -41,8 +41,6 @@ public class SessionMgtUtils {
 
     public static final String SQL_QUERY_APPLICATIONS_SPLIT_CHARACTER = "|";
     public static final String SQL_QUERY_APPLICATION_DETAILS_SPLIT_CHARACTER = ":";
-    public static final String SQL_LIKE_ESCAPE_CLAUSE = " LIKE ? ESCAPE '\\\\'";
-
 
     /**
      * Transform a list of filter expressions into SQL query strings.
@@ -273,15 +271,15 @@ public class SessionMgtUtils {
                         paramValue = isString ? value : parseNumericFilterValue(attribute, value);
                         break;
                     case SessionMgtConstants.SW:
-                        filterSQL.append(attribute).append(SQL_LIKE_ESCAPE_CLAUSE);
+                        filterSQL.append(attribute).append(" LIKE ? ESCAPE '\\'");
                         paramValue = escapeLikeChars(value) + "%";
                         break;
                     case SessionMgtConstants.EW:
-                        filterSQL.append(attribute).append(SQL_LIKE_ESCAPE_CLAUSE);
+                        filterSQL.append(attribute).append(" LIKE ? ESCAPE '\\'");
                         paramValue = "%" + escapeLikeChars(value);
                         break;
                     case SessionMgtConstants.CO:
-                        filterSQL.append(attribute).append(SQL_LIKE_ESCAPE_CLAUSE);
+                        filterSQL.append(attribute).append(" LIKE ? ESCAPE '\\'");
                         paramValue = "%" + escapeLikeChars(value) + "%";
                         break;
                     case SessionMgtConstants.LE:
