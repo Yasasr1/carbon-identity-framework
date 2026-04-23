@@ -301,7 +301,8 @@
   "identity_mgt.events.schemes.OrganizationSessionHandler.subscriptions": [
     "SESSION_TERMINATE",
     "SESSION_EXTENSION",
-    "SESSION_CREATE"
+    "SESSION_CREATE",
+    "SESSION_EXPIRE"
   ],
   "identity_mgt.events.schemes.FragmentApplicationMgtHandler.module_index": "47",
   "identity_mgt.events.schemes.FragmentApplicationMgtHandler.subscriptions": [
