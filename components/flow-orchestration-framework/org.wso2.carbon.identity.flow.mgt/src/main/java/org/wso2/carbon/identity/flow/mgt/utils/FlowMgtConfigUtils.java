@@ -238,7 +238,7 @@ public class FlowMgtConfigUtils {
 
     private static boolean isFlowEnabledForTenant(String flowType, String tenantDomain) {
 
-        if (tenantDomain == null) {
+        if (StringUtils.isBlank(tenantDomain)) {
             return false;
         }
         CompatibilitySettingsManager manager =
@@ -259,8 +259,10 @@ public class FlowMgtConfigUtils {
             }
             return Boolean.parseBoolean(group.getSettingValue(settingKey));
         } catch (CompatibilitySettingException e) {
-            LOG.warn("Could not evaluate compatibility setting for tenant: " + tenantDomain +
-                    ". Default flows will not be enabled.", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Could not evaluate compatibility setting for tenant: " + tenantDomain +
+                        ". Default flows will not be enabled.", e);
+            }
             return false;
         }
     }
