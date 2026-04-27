@@ -230,13 +230,13 @@ public class FlowMgtConfigUtils {
         FlowConfigDTO flowConfigDTO = new FlowConfigDTO();
         flowConfigDTO.setFlowType(flowType);
         boolean isEnabled = SERVER_DEFAULT_ENABLED_FLOWS.contains(flowType)
-                && isFlowEnabledForTenant(flowType, tenantDomain);
+                && isFlowEnabledForTenantByDefault(flowType, tenantDomain);
         flowConfigDTO.setIsEnabled(isEnabled);
         flowConfigDTO.addAllFlowCompletionConfigs(requestedFlowType.getSupportedFlowCompletionConfigs());
         return flowConfigDTO;
     }
 
-    private static boolean isFlowEnabledForTenant(String flowType, String tenantDomain) {
+    private static boolean isFlowEnabledForTenantByDefault(String flowType, String tenantDomain) {
 
         if (StringUtils.isBlank(tenantDomain)) {
             return false;
