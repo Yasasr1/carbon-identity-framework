@@ -143,26 +143,37 @@ public class Constants {
 
     public enum FlowTypes {
 
-        REGISTRATION("REGISTRATION", FlowCompletionConfig.IS_ACCOUNT_LOCK_ON_CREATION_ENABLED,
+        REGISTRATION("REGISTRATION", "enableFlowBasedRegistration",
+                FlowCompletionConfig.IS_ACCOUNT_LOCK_ON_CREATION_ENABLED,
                 FlowCompletionConfig.IS_EMAIL_VERIFICATION_ENABLED, FlowCompletionConfig.IS_AUTO_LOGIN_ENABLED,
                 FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED),
-        PASSWORD_RECOVERY("PASSWORD_RECOVERY", FlowCompletionConfig.IS_AUTO_LOGIN_ENABLED,
+        PASSWORD_RECOVERY("PASSWORD_RECOVERY", "enableFlowBasedPasswordRecovery",
+                FlowCompletionConfig.IS_AUTO_LOGIN_ENABLED,
                 FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED),
-        INVITED_USER_REGISTRATION("INVITED_USER_REGISTRATION", FlowCompletionConfig.IS_AUTO_LOGIN_ENABLED,
+        INVITED_USER_REGISTRATION("INVITED_USER_REGISTRATION", 
+                "enableFlowBasedInvitedUserRegistration",
+                FlowCompletionConfig.IS_AUTO_LOGIN_ENABLED,
                 FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED);
 
         private final String type;
+        private final String compatibilitySettingKey;
         private final ArrayList<FlowCompletionConfig> supportedFlowCompletionConfigs = new ArrayList<>();
 
-        FlowTypes(String type, FlowCompletionConfig... requiredFlowCompletionConfigs) {
+        FlowTypes(String type, String compatibilitySettingKey, FlowCompletionConfig... requiredFlowCompletionConfigs) {
 
             this.type = type;
+            this.compatibilitySettingKey = compatibilitySettingKey;
             this.supportedFlowCompletionConfigs.addAll(Arrays.asList(requiredFlowCompletionConfigs));
         }
 
         public String getType() {
 
             return type;
+        }
+
+        public String getCompatibilitySettingKey() {
+
+            return compatibilitySettingKey;
         }
 
         public ArrayList<FlowCompletionConfig> getSupportedFlowCompletionConfigs() {
@@ -254,6 +265,7 @@ public class Constants {
         public static final String FLOW_EXECUTION_CONFIG = "FlowExecution";
         public static final String DEFAULT_ENABLED_FLOWS_CONFIG = "DefaultEnabledFlows";
         public static final String FLOW_TYPE_ELEMENT = "FlowType";
+        public static final String COMPATIBILITY_SETTING_GROUP = "flowExecution";
 
         private FlowConfigConstants() {
 

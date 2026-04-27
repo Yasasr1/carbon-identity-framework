@@ -25,6 +25,10 @@ import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.compatibility.settings.core.CompatibilitySettingsManager;
+import org.wso2.carbon.identity.compatibility.settings.core.exception.CompatibilitySettingException;
+import org.wso2.carbon.identity.compatibility.settings.core.model.CompatibilitySetting;
+import org.wso2.carbon.identity.compatibility.settings.core.model.CompatibilitySettingGroup;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
@@ -65,6 +69,7 @@ import static org.wso2.carbon.identity.flow.mgt.Constants.FlowConfigConstants.RE
 public class FlowMgtConfigUtilsTest {
 
     private ConfigurationManager configurationManager;
+    private FlowMgtServiceDataHolder serviceDataHolder;
     private MockedStatic<FlowMgtServiceDataHolder> flowMgtServiceDataHolderMock;
     private static final String TENANT_DOMAIN = "carbon.super";
     private static final String FLOW_TYPE_REGISTRATION = "REGISTRATION";
@@ -75,7 +80,7 @@ public class FlowMgtConfigUtilsTest {
     public void setUp() {
 
         configurationManager = mock(ConfigurationManager.class);
-        FlowMgtServiceDataHolder serviceDataHolder = mock(FlowMgtServiceDataHolder.class);
+        serviceDataHolder = mock(FlowMgtServiceDataHolder.class);
 
         flowMgtServiceDataHolderMock = Mockito.mockStatic(FlowMgtServiceDataHolder.class);
 
@@ -511,6 +516,79 @@ public class FlowMgtConfigUtilsTest {
         Assert.assertEquals(registrationCount, 1);
         Assert.assertEquals(passwordRecoveryCount, 1);
         Assert.assertEquals(invitedUserCount, 1);
+    }
+
+    @Test
+    public void testIsFlowEnabledForTenantReturnsFalseWhenTenantDomainIsNull() throws Exception {
+
+        java.lang.reflect.Method method =
+                FlowMgtConfigUtils.class.getDeclaredMethod("isFlowEnabledForTenant", String.class, String.class);
+        method.setAccessible(true);
+        boolean result = (boolean) method.invoke(null, FLOW_TYPE_REGISTRATION, null);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsFlowEnabledForTenantReturnsFalseWhenManagerIsNull() throws Exception {
+
+        // serviceDataHolder.getCompatibilitySettingsManager() is not stubbed → returns null
+        java.lang.reflect.Method method =
+                FlowMgtConfigUtils.class.getDeclaredMethod("isFlowEnabledForTenant", String.class, String.class);
+        method.setAccessible(true);
+        boolean result = (boolean) method.invoke(null, FLOW_TYPE_REGISTRATION, TENANT_DOMAIN);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsFlowEnabledForTenantReturnsTrueForNewTenant() throws Exception {
+
+        CompatibilitySettingsManager manager = mock(CompatibilitySettingsManager.class);
+        when(serviceDataHolder.getCompatibilitySettingsManager()).thenReturn(manager);
+
+        CompatibilitySetting setting = new CompatibilitySetting();
+        CompatibilitySettingGroup group = new CompatibilitySettingGroup();
+        group.setSettingGroup(Constants.FlowConfigConstants.COMPATIBILITY_SETTING_GROUP);
+        group.addSetting(Constants.FlowTypes.REGISTRATION.getCompatibilitySettingKey(), "true");
+        setting.addCompatibilitySetting(group);
+        when(manager.getCompatibilitySettingsByGroupAndSetting(anyString(), anyString(), anyString()))
+                .thenReturn(setting);
+
+        java.lang.reflect.Method method =
+                FlowMgtConfigUtils.class.getDeclaredMethod("isFlowEnabledForTenant", String.class, String.class);
+        method.setAccessible(true);
+        boolean result = (boolean) method.invoke(null, FLOW_TYPE_REGISTRATION, TENANT_DOMAIN);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testIsFlowEnabledForTenantReturnsFalseWhenSettingGroupAbsent() throws Exception {
+
+        CompatibilitySettingsManager manager = mock(CompatibilitySettingsManager.class);
+        when(serviceDataHolder.getCompatibilitySettingsManager()).thenReturn(manager);
+
+        when(manager.getCompatibilitySettingsByGroupAndSetting(anyString(), anyString(), anyString()))
+                .thenReturn(new CompatibilitySetting());
+
+        java.lang.reflect.Method method =
+                FlowMgtConfigUtils.class.getDeclaredMethod("isFlowEnabledForTenant", String.class, String.class);
+        method.setAccessible(true);
+        boolean result = (boolean) method.invoke(null, FLOW_TYPE_REGISTRATION, TENANT_DOMAIN);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsFlowEnabledForTenantReturnsFalseOnException() throws Exception {
+
+        CompatibilitySettingsManager manager = mock(CompatibilitySettingsManager.class);
+        when(serviceDataHolder.getCompatibilitySettingsManager()).thenReturn(manager);
+        when(manager.getCompatibilitySettingsByGroupAndSetting(anyString(), anyString(), anyString()))
+                .thenThrow(new CompatibilitySettingException("TEST-001", "Test error", "Test description"));
+
+        java.lang.reflect.Method method =
+                FlowMgtConfigUtils.class.getDeclaredMethod("isFlowEnabledForTenant", String.class, String.class);
+        method.setAccessible(true);
+        boolean result = (boolean) method.invoke(null, FLOW_TYPE_REGISTRATION, TENANT_DOMAIN);
+        Assert.assertFalse(result);
     }
 
     @Test

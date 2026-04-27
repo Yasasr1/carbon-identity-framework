@@ -57,10 +57,6 @@
             <artifactId>org.wso2.carbon.identity.base</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.identity.framework</groupId>
-            <artifactId>org.wso2.carbon.identity.application.authentication.framework</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.ops4j.pax.logging</groupId>
             <artifactId>pax-logging-api</artifactId>
         </dependency>
@@ -101,8 +97,8 @@
                             version="${carbon.identity.package.import.version.range}",
                             org.wso2.carbon.identity.base;
                             version="${carbon.identity.package.import.version.range}",
-                            org.wso2.carbon.identity.application.authentication.framework.util;
-                            version="${carbon.identity.package.import.version.range}",
+                            org.wso2.carbon.context;
+                            version="${carbon.kernel.package.import.version.range}",
                             org.wso2.carbon.identity.configuration.mgt.core;
                             version="${carbon.identity.package.import.version.range}",
                             org.wso2.carbon.identity.configuration.mgt.core.constant;
