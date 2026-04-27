@@ -548,7 +548,7 @@ public class FlowMgtConfigUtilsTest {
         CompatibilitySetting setting = new CompatibilitySetting();
         CompatibilitySettingGroup group = new CompatibilitySettingGroup();
         group.setSettingGroup(Constants.FlowConfigConstants.COMPATIBILITY_SETTING_GROUP);
-        group.addSetting(Constants.FlowTypes.REGISTRATION.getCompatibilitySettingKey(), "true");
+        group.addSetting(Constants.FlowTypes.REGISTRATION.getEnableFeatureCompatibilitySettingKey(), "true");
         setting.addCompatibilitySetting(group);
         when(manager.getCompatibilitySettingsByGroupAndSetting(anyString(), anyString(), anyString()))
                 .thenReturn(setting);

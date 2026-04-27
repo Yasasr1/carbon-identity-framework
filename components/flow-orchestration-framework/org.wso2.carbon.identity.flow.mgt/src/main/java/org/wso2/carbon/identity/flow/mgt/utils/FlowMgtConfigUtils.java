@@ -247,7 +247,7 @@ public class FlowMgtConfigUtils {
             return false;
         }
         try {
-            String settingKey = Constants.FlowTypes.valueOf(flowType).getCompatibilitySettingKey();
+            String settingKey = Constants.FlowTypes.valueOf(flowType).getEnableFeatureCompatibilitySettingKey();
             CompatibilitySetting setting = manager.getCompatibilitySettingsByGroupAndSetting(
                     tenantDomain,
                     Constants.FlowConfigConstants.COMPATIBILITY_SETTING_GROUP,

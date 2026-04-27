@@ -156,13 +156,14 @@ public class Constants {
                 FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED);
 
         private final String type;
-        private final String compatibilitySettingKey;
+        private final String enableFeatureCompatibilitySettingKey;
         private final ArrayList<FlowCompletionConfig> supportedFlowCompletionConfigs = new ArrayList<>();
 
-        FlowTypes(String type, String compatibilitySettingKey, FlowCompletionConfig... requiredFlowCompletionConfigs) {
+        FlowTypes(String type, String enableFeatureCompatibilitySettingKey,
+                  FlowCompletionConfig... requiredFlowCompletionConfigs) {
 
             this.type = type;
-            this.compatibilitySettingKey = compatibilitySettingKey;
+            this.enableFeatureCompatibilitySettingKey = enableFeatureCompatibilitySettingKey;
             this.supportedFlowCompletionConfigs.addAll(Arrays.asList(requiredFlowCompletionConfigs));
         }
 
@@ -171,9 +172,9 @@ public class Constants {
             return type;
         }
 
-        public String getCompatibilitySettingKey() {
+        public String getEnableFeatureCompatibilitySettingKey() {
 
-            return compatibilitySettingKey;
+            return enableFeatureCompatibilitySettingKey;
         }
 
         public ArrayList<FlowCompletionConfig> getSupportedFlowCompletionConfigs() {
