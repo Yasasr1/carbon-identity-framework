@@ -522,7 +522,8 @@ public class FlowMgtConfigUtilsTest {
     public void testIsFlowEnabledForTenantReturnsFalseWhenTenantDomainIsNull() throws Exception {
 
         java.lang.reflect.Method method =
-                FlowMgtConfigUtils.class.getDeclaredMethod("isFlowEnabledForTenant", String.class, String.class);
+                FlowMgtConfigUtils.class
+                        .getDeclaredMethod("isFlowEnabledForTenantByDefault", String.class, String.class);
         method.setAccessible(true);
         boolean result = (boolean) method.invoke(null, FLOW_TYPE_REGISTRATION, null);
         Assert.assertFalse(result);
@@ -533,7 +534,8 @@ public class FlowMgtConfigUtilsTest {
 
         // serviceDataHolder.getCompatibilitySettingsManager() is not stubbed → returns null
         java.lang.reflect.Method method =
-                FlowMgtConfigUtils.class.getDeclaredMethod("isFlowEnabledForTenant", String.class, String.class);
+                FlowMgtConfigUtils.class
+                        .getDeclaredMethod("isFlowEnabledForTenantByDefault", String.class, String.class);
         method.setAccessible(true);
         boolean result = (boolean) method.invoke(null, FLOW_TYPE_REGISTRATION, TENANT_DOMAIN);
         Assert.assertFalse(result);
@@ -554,7 +556,8 @@ public class FlowMgtConfigUtilsTest {
                 .thenReturn(setting);
 
         java.lang.reflect.Method method =
-                FlowMgtConfigUtils.class.getDeclaredMethod("isFlowEnabledForTenant", String.class, String.class);
+                FlowMgtConfigUtils.class
+                        .getDeclaredMethod("isFlowEnabledForTenantByDefault", String.class, String.class);
         method.setAccessible(true);
         boolean result = (boolean) method.invoke(null, FLOW_TYPE_REGISTRATION, TENANT_DOMAIN);
         Assert.assertTrue(result);
@@ -570,7 +573,8 @@ public class FlowMgtConfigUtilsTest {
                 .thenReturn(new CompatibilitySetting());
 
         java.lang.reflect.Method method =
-                FlowMgtConfigUtils.class.getDeclaredMethod("isFlowEnabledForTenant", String.class, String.class);
+                FlowMgtConfigUtils.class
+                        .getDeclaredMethod("isFlowEnabledForTenantByDefault", String.class, String.class);
         method.setAccessible(true);
         boolean result = (boolean) method.invoke(null, FLOW_TYPE_REGISTRATION, TENANT_DOMAIN);
         Assert.assertFalse(result);
@@ -585,7 +589,8 @@ public class FlowMgtConfigUtilsTest {
                 .thenThrow(new CompatibilitySettingException("TEST-001", "Test error", "Test description"));
 
         java.lang.reflect.Method method =
-                FlowMgtConfigUtils.class.getDeclaredMethod("isFlowEnabledForTenant", String.class, String.class);
+                FlowMgtConfigUtils.class
+                        .getDeclaredMethod("isFlowEnabledForTenantByDefault", String.class, String.class);
         method.setAccessible(true);
         boolean result = (boolean) method.invoke(null, FLOW_TYPE_REGISTRATION, TENANT_DOMAIN);
         Assert.assertFalse(result);
