@@ -143,27 +143,26 @@ public class Constants {
 
     public enum FlowTypes {
 
-        REGISTRATION("REGISTRATION", "enableFlowBasedRegistration",
+        REGISTRATION("REGISTRATION", "defaultEnableRegistration",
                 FlowCompletionConfig.IS_ACCOUNT_LOCK_ON_CREATION_ENABLED,
                 FlowCompletionConfig.IS_EMAIL_VERIFICATION_ENABLED, FlowCompletionConfig.IS_AUTO_LOGIN_ENABLED,
                 FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED),
-        PASSWORD_RECOVERY("PASSWORD_RECOVERY", "enableFlowBasedPasswordRecovery",
+        PASSWORD_RECOVERY("PASSWORD_RECOVERY", "defaultEnablePasswordRecovery",
                 FlowCompletionConfig.IS_AUTO_LOGIN_ENABLED,
                 FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED),
-        INVITED_USER_REGISTRATION("INVITED_USER_REGISTRATION", 
-                "enableFlowBasedInvitedUserRegistration",
+        INVITED_USER_REGISTRATION("INVITED_USER_REGISTRATION", "defaultEnableInvitedUserRegistration",
                 FlowCompletionConfig.IS_AUTO_LOGIN_ENABLED,
                 FlowCompletionConfig.IS_FLOW_COMPLETION_NOTIFICATION_ENABLED);
 
         private final String type;
-        private final String enableFeatureCompatibilitySettingKey;
+        private final String defaultEnablementCompatibilityKey;
         private final ArrayList<FlowCompletionConfig> supportedFlowCompletionConfigs = new ArrayList<>();
 
-        FlowTypes(String type, String enableFeatureCompatibilitySettingKey,
+        FlowTypes(String type, String defaultEnablementCompatibilityKey,
                   FlowCompletionConfig... requiredFlowCompletionConfigs) {
 
             this.type = type;
-            this.enableFeatureCompatibilitySettingKey = enableFeatureCompatibilitySettingKey;
+            this.defaultEnablementCompatibilityKey = defaultEnablementCompatibilityKey;
             this.supportedFlowCompletionConfigs.addAll(Arrays.asList(requiredFlowCompletionConfigs));
         }
 
@@ -172,9 +171,9 @@ public class Constants {
             return type;
         }
 
-        public String getEnableFeatureCompatibilitySettingKey() {
+        public String getDefaultEnablementCompatibilityKey() {
 
-            return enableFeatureCompatibilitySettingKey;
+            return defaultEnablementCompatibilityKey;
         }
 
         public ArrayList<FlowCompletionConfig> getSupportedFlowCompletionConfigs() {

@@ -54,10 +54,10 @@
             "targetValue" : {{compatibility_setting.flow_execution.enable_legacy_password_recovery_flow.target_value | default("true")}},
             "defaultValue" : {{compatibility_setting.flow_execution.enable_legacy_password_recovery_flow.default_value | default("false")}}
       },
-      "enableFlowBasedInvitedUserRegistration" : {
-        "timestampReference" : "{{compatibility_setting.flow_execution.enable_flow_based_invited_user_registration.timestamp_reference | default('2026-01-01T00:00:00Z')}}",
-        "targetValue" : {{compatibility_setting.flow_execution.enable_flow_based_invited_user_registration.target_value | default("false")}},
-        "defaultValue" : {{compatibility_setting.flow_execution.enable_flow_based_invited_user_registration.default_value | default("true")}}
+      "defaultEnableInvitedUserRegistration" : {
+        "timestampReference" : "{{compatibility_setting.flow_execution.default_enable_flow_based_invited_user_registration.timestamp_reference | default('2026-01-01T00:00:00Z')}}",
+        "targetValue" : {{compatibility_setting.flow_execution.default_enable_flow_based_invited_user_registration.target_value | default("false")}},
+        "defaultValue" : {{compatibility_setting.flow_execution.default_enable_flow_based_invited_user_registration.default_value | default("true")}}
       }
   },
   "scim2": {
