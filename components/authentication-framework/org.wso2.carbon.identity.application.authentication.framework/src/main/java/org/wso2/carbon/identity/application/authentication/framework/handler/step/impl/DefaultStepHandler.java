@@ -894,9 +894,13 @@ public class DefaultStepHandler implements StepHandler {
             // Set authorized organization and user resident organization for B2B user logins.
             if (context.getSubject() != null && isLoggedInWithOrganizationLogin(authenticatorConfig)) {
                 String userResidentOrganization = resolveUserResidentOrganization(context.getSubject());
+                String userAccessingOrganization = resolveUserAccessingOrganization(context.getSubject());
                 context.getSubject().setUserResidentOrganization(userResidentOrganization);
-                // Set the accessing org as the user resident org. The accessing org will be changed when org switching.
-                context.getSubject().setAccessingOrganization(userResidentOrganization);
+                if (StringUtils.isNotBlank(userAccessingOrganization)) {
+                    context.getSubject().setAccessingOrganization(userAccessingOrganization);
+                } else {
+                    context.getSubject().setAccessingOrganization(userResidentOrganization);
+                }
             }
 
             if (context.getSubject() != null && context.isSharedAppLogin()) {
@@ -1636,22 +1640,54 @@ public class DefaultStepHandler implements StepHandler {
 
     /**
      * Resolve user resident organization for the users authenticated via the B2B organization login authenticator.
+     * The resolution is done in the following priority order:
+     * 1. {@link FrameworkConstants#USER_ORG_CLAIM} claim.
+     * 2. {@link FrameworkConstants#ORG_ID_CLAIM} claim.
+     * 3. {@link FrameworkConstants#USER_ORGANIZATION_CLAIM} claim.
      *
-     * @param authenticatedUser   The authenticated user.
+     * @param authenticatedUser The authenticated user.
      * @return The organization where the user's identity is managed.
+     * @throws FrameworkException If the user resident organization could not be resolved.
      */
     private String resolveUserResidentOrganization(AuthenticatedUser authenticatedUser) throws FrameworkException {
 
-        // Check for user organization claim for the authenticated user via the organization login authenticator.
+        if (MapUtils.isNotEmpty(authenticatedUser.getUserAttributes())) {
+            String orgIdValue = null;
+            String userOrganizationValue = null;
+            for (Map.Entry<ClaimMapping, String> userAttribute : authenticatedUser.getUserAttributes().entrySet()) {
+                String claimUri = userAttribute.getKey().getLocalClaim().getClaimUri();
+                // user_org has the highest priority.
+                if (FrameworkConstants.USER_ORG_CLAIM.equals(claimUri)) {
+                    return userAttribute.getValue();
+                }
+                if (FrameworkConstants.ORG_ID_CLAIM.equals(claimUri)) {
+                    orgIdValue = userAttribute.getValue();
+                } else if (FrameworkConstants.USER_ORGANIZATION_CLAIM.equals(claimUri)) {
+                    userOrganizationValue = userAttribute.getValue();
+                }
+            }
+            if (orgIdValue != null) {
+                return orgIdValue;
+            }
+            if (userOrganizationValue != null) {
+                return userOrganizationValue;
+            }
+        }
+
+        throw new FrameworkException("User resident organization could not be found.");
+    }
+
+    private String resolveUserAccessingOrganization(AuthenticatedUser authenticatedUser) {
+
         if (authenticatedUser.getUserAttributes() != null) {
             for (Map.Entry<ClaimMapping, String> userAttributes : authenticatedUser.getUserAttributes().entrySet()) {
-                if (FrameworkConstants.USER_ORGANIZATION_CLAIM.equals(
-                        userAttributes.getKey().getLocalClaim().getClaimUri())) {
+                if (FrameworkConstants.ORG_ID_CLAIM.equals(userAttributes.getKey().getLocalClaim().getClaimUri())) {
                     return userAttributes.getValue();
                 }
             }
         }
-        throw new FrameworkException("User resident organization could not found");
+
+        return null;
     }
 
     private void handleAPIBasedAuthenticationData(HttpServletRequest request, ApplicationAuthenticator authenticator,

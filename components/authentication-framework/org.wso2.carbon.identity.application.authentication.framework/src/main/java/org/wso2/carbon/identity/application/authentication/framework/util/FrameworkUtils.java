@@ -4130,6 +4130,41 @@ public class FrameworkUtils {
     }
 
     /**
+     * Pre-process user's username considering authentication context.
+     * produces identical results to
+     * preprocessUsernameWithContextTenantDomain(String username, AuthenticationContext context) method for non-shared
+     * users. For shared users, this method appends the user resident tenant domain to the username.
+     *
+     * @param username Username of the user.
+     * @param context  Authentication context.
+     * @return preprocessed username with context tenant domain.
+     */
+    public static String preprocessUsernameWithUserResidentTenantDomain(
+            String username, AuthenticationContext context) {
+
+        boolean isSaaSApp = context.getSequenceConfig().getApplicationConfig().isSaaSApp();
+
+        if (isLegacySaaSAuthenticationEnabled() && isSaaSApp) {
+            return username;
+        }
+
+        if (IdentityUtil.isEmailUsernameEnabled()) {
+            if (StringUtils.countMatches(username, "@") == 1) {
+                return username + "@" + context.getUserTenantDomain();
+            }
+        } else if (!username.endsWith(context.getUserTenantDomain())) {
+
+            // If the username is email-type (without enabling email username option) or belongs to a tenant which is
+            // not the app owner.
+            if (isSaaSApp && StringUtils.countMatches(username, "@") >= 1) {
+                return username;
+            }
+            return username + "@" + context.getUserResidentTenantDomain();
+        }
+        return username;
+    }
+
+    /**
      * Pre-process user's username considering the service provider.
      *
      * @param username Username of the user.
@@ -5120,5 +5155,41 @@ public class FrameworkUtils {
 
         return Boolean.parseBoolean(
                 IdentityUtil.getProperty(FrameworkConstants.Config.MARK_STEP_COMPLETED_ON_INTERRUPT));
+    }
+
+    /**
+     * Check whether to use the resident user id when a shared user logs in to a sub-organization through a
+     * federated authenticator while use local account attributes configuration is set to true in the application.
+     *
+     * @return true if enabled, false otherwise.
+     */
+    public static boolean useResidentUserIdForAuthenticatedSharedUsers() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty(
+                FrameworkConstants.Config.USE_RESIDENT_USER_ID_FOR_AUTHENTICATED_SHARED_USERS));
+    }
+
+    /**
+     * Retrieves the shared authenticated user identified during the authentication sequence, if any.
+     * Iterates over the step configurations in the sequence and returns the authenticated user from
+     * the step handled by {@link FrameworkConstants#SHARED_USER_IDENTIFIER_HANDLER}, provided that
+     * the user is a shared user.
+     *
+     * @param context Authentication context containing the sequence configuration and step results.
+     * @return An {@link Optional} containing the shared {@link AuthenticatedUser} if one was identified
+     *         in the sequence, or an empty {@link Optional} otherwise.
+     */
+    public static Optional<AuthenticatedUser> getSharedUserIdentifiedInSequence(AuthenticationContext context) {
+
+        for (StepConfig stepConfig : context.getSequenceConfig().getStepMap().values()) {
+            if (stepConfig.getAuthenticatedAutenticator() != null &&
+                    FrameworkConstants.SHARED_USER_IDENTIFIER_HANDLER.equals(
+                    stepConfig.getAuthenticatedAutenticator().getName()) &&
+                    stepConfig.getAuthenticatedUser() != null && stepConfig.getAuthenticatedUser().isSharedUser()) {
+                return Optional.of(stepConfig.getAuthenticatedUser());
+            }
+        }
+
+        return Optional.empty();
     }
 }

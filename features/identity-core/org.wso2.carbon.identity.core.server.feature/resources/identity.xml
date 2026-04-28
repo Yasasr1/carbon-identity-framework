@@ -3038,6 +3038,7 @@
     <WorkflowEngine>
         <MaxApproverNotifications>15</MaxApproverNotifications>
     </WorkflowEngine>
+    <UseResidentUserIdForAuthenticatedSharedUsers>true</UseResidentUserIdForAuthenticatedSharedUsers>
 
     <AppNativeAuthentication>
         <HandleFailCompletedAuthenticatorStatus>true</HandleFailCompletedAuthenticatorStatus>
