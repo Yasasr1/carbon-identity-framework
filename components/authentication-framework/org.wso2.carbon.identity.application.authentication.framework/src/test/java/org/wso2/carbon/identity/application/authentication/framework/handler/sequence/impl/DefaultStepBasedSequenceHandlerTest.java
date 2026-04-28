@@ -1268,7 +1268,7 @@ public class DefaultStepBasedSequenceHandlerTest {
     }
 
     @Test(description = "Test enrichAuthenticatedLocalIdp enriches local IDP user with shared user details")
-    public void testEnrichAuthenticatedLocalIdpWithSharedUser() throws Exception {
+    public void testEnrichAuthenticatedUserForLocalIdpWithSharedUser() throws Exception {
 
         AuthenticationContext testContext = new AuthenticationContext();
         SequenceConfig sequenceConfig = new SequenceConfig();

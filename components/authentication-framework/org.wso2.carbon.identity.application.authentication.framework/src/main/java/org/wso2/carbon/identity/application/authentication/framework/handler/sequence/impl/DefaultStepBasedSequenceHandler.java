@@ -463,7 +463,7 @@ public class DefaultStepBasedSequenceHandler implements StepBasedSequenceHandler
     private void enrichSharedUserDetails(AuthenticationContext context) {
 
         enrichSequenceConfig(context);
-        enrichAuthenticatedLocalIdp(context);
+        enrichAuthenticatedUserForLocalIdp(context);
     }
 
     private void enrichSequenceConfig(AuthenticationContext context) {
@@ -494,7 +494,7 @@ public class DefaultStepBasedSequenceHandler implements StepBasedSequenceHandler
         return authenticatedUser;
     }
 
-    private void enrichAuthenticatedLocalIdp(AuthenticationContext context) {
+    private void enrichAuthenticatedUserForLocalIdp(AuthenticationContext context) {
 
         AuthenticatedIdPData localIdPData = context.getCurrentAuthenticatedIdPs()
                 .get(FrameworkConstants.LOCAL_IDP_NAME);

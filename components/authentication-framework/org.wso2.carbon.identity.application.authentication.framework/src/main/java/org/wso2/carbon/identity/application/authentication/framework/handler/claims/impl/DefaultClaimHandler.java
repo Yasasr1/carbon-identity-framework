@@ -972,6 +972,20 @@ public class DefaultClaimHandler implements ClaimHandler {
         return spToLocalClaimMappings;
     }
 
+    /**
+     * Returns all non-null claim values of the provided user.
+     *
+     * @param authenticatedUser     AuthenticatedUser object representing the user who is authenticated.
+     * @param claimManager          Claim manager.
+     * @param authenticatedUserId   Authenticated user ID that should be used to resolve the claim values.
+     *                              This value will be different to the value returned with AuthenticatedUser.getUserId
+     *                              in shared user direct login to sub-organzation flows.
+     *                              In such flows AuthenticatedUser.getUserId returns resident user ID and this param
+     *                              should contain the shared user ID.
+     * @param userStore             User store used to resolve the claims.
+     * @return                      Map containing claims.
+     * @throws FrameworkException   If an exception occurred while resolving claim values.
+     */
     private Map<String, String> retrieveAllNunNullUserClaimValues(AuthenticatedUser authenticatedUser,
             ClaimManager claimManager, String authenticatedUserId, AbstractUserStoreManager userStore)
             throws FrameworkException {
@@ -1179,8 +1193,8 @@ public class DefaultClaimHandler implements ClaimHandler {
                 /*
                  * For shared user login flows, returned ID token should contain the user id of the resident user if
                  * the "sub" claim is configured to be the user ID. So the shared user ID resolved above should be
-                 * replaced with the resident user ID. For any other claims we can return the value set at
-                 * the relevant shared user profile.
+                 * replaced with the actual user ID (ID of the resident user). For any other claims we can return the
+                 * value set at the relevant shared user profile.
                  */
                 if (sharedUserIdentifiedInSequence.isPresent() && FrameworkConstants.USER_ID_CLAIM.equals(subjectURI)) {
                     value = authenticatedUser.getUserId();
