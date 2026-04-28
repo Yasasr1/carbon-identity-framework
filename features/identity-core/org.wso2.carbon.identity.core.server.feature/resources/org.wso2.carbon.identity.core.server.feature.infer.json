@@ -233,6 +233,14 @@
       ]
     }
   },
+  "oauth.jwks_endpoint.enable_x5t_in_response": {
+    "true": {
+      "oauth.jwks_endpoint.is_x5t_required": true
+    },
+    "false": {
+      "oauth.jwks_endpoint.is_x5t_required": false
+    }
+  },
   "server.legacy_mode": {
     "true": {
       "oauth.enable_sha256": false,
@@ -315,7 +323,6 @@
       "identifier_first.preserve_case_sensitivity.enabled": false,
       "application_mgt.enable_cross_tenant_authorized_api_validation": false,
       "oauth.callback.restrict_fragment_components": false,
-      "oauth.drop_unrequested_oidc_scopes": false,
       "oauth.jwt_x5t_s256_enabled": false,
       "oauth.jwt_x5t_enabled": true,
       "identity_mgt.challenge_questions.skip_sending_questions_in_url": false,
@@ -329,8 +336,9 @@
       "identity_providers.support_multiple_certificate_export": false,
       "tenant_level_application_authentication_config.enabled_for_auth_sequence": false,
       "api.filters.single_character_wildcard": "_",
-      "transport.https.client.provider_name": "",
-      "identity_secret_manager.secret_value_clob_column_exists": false
+      "identity_secret_manager.secret_value_clob_column_exists": false,
+      "app_native_authentication.handle_fail_completed_authenticator_status": false,
+      "enhanced_organization_authentication.enabled_by_default_for_new_apps" : false
     },
     "IS_7.1.0": {
       "oauth.dcrm.return_null_fields_in_response": true,
@@ -375,7 +383,6 @@
       "authenticationendpoint.authenticator_validation.enabled": false,
       "application_mgt.enable_cross_tenant_authorized_api_validation": false,
       "oauth.callback.restrict_fragment_components": false,
-      "oauth.drop_unrequested_oidc_scopes": false,
       "oauth.jwt_x5t_s256_enabled": false,
       "oauth.jwt_x5t_enabled": true,
       "authentication.authenticator.x509_certificate.parameters.UseInternalHostnameForRedirect": true,
@@ -391,15 +398,18 @@
       "identity_providers.support_multiple_certificate_export": false,
       "tenant_level_application_authentication_config.enabled_for_auth_sequence": false,
       "api.filters.single_character_wildcard": "_",
-      "transport.https.client.provider_name": "",
-      "identity_secret_manager.secret_value_clob_column_exists": false,
       "use_resident_user_id_for_authenticated_shared_users.enabled": false
+      "identity_secret_manager.secret_value_clob_column_exists": false,
+      "authentication.include_auth_failure_reason_in_api_based_response": false,
+      "authentication.include_multi_options_in_api_based_auth_response": false,
+      "app_native_authentication.handle_fail_completed_authenticator_status": false,
+      "actions.action_request.case_insensitive_header_filtering": false,
+      "enhanced_organization_authentication.enabled_by_default_for_new_apps" : false
     },
     "IS_7.2.0": {
       "authenticationendpoint.authenticator_validation.enabled": false,
       "application_mgt.enable_cross_tenant_authorized_api_validation": false,
       "oauth.callback.restrict_fragment_components": false,
-      "oauth.drop_unrequested_oidc_scopes": false,
       "oauth.jwt_x5t_s256_enabled": false,
       "oauth.jwt_x5t_enabled": true,
       "authentication.authenticator.x509_certificate.parameters.UseInternalHostnameForRedirect": true,
@@ -415,9 +425,14 @@
       "identity_providers.support_multiple_certificate_export": false,
       "tenant_level_application_authentication_config.enabled_for_auth_sequence": false,
       "api.filters.single_character_wildcard": "_",
-      "transport.https.client.provider_name": "",
-      "identity_secret_manager.secret_value_clob_column_exists": false,
       "use_resident_user_id_for_authenticated_shared_users.enabled": false
+      "identity_secret_manager.secret_value_clob_column_exists": false,
+      "authentication.include_auth_failure_reason_in_api_based_response": false,
+      "authentication.include_multi_options_in_api_based_auth_response": false,
+      "app_native_authentication.handle_fail_completed_authenticator_status": false,
+      "webhooks.registration.skip_signup_confirmation_if_account_lock_disabled": false,
+      "actions.action_request.case_insensitive_header_filtering": false,
+      "enhanced_organization_authentication.enabled_by_default_for_new_apps" : false
     }
   }
 }
