@@ -1267,7 +1267,7 @@ public class DefaultStepBasedSequenceHandlerTest {
                 "accessing-org-id", "Accessing organization should be set from shared step");
     }
 
-    @Test(description = "Test enrichAuthenticatedLocalIdp enriches local IDP user with shared user details")
+    @Test(description = "Test enrichAuthenticatedUserForLocalIdp enriches local IDP user with shared user details")
     public void testEnrichAuthenticatedUserForLocalIdpWithSharedUser() throws Exception {
 
         AuthenticationContext testContext = new AuthenticationContext();
@@ -1301,7 +1301,7 @@ public class DefaultStepBasedSequenceHandlerTest {
         testContext.setCurrentAuthenticatedIdPs(idpMap);
 
         Method method = DefaultStepBasedSequenceHandler.class.getDeclaredMethod(
-                "enrichAuthenticatedLocalIdp", AuthenticationContext.class);
+                "enrichAuthenticatedUserForLocalIdp", AuthenticationContext.class);
         method.setAccessible(true);
         method.invoke(stepBasedSequenceHandler, testContext);
 
