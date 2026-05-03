@@ -820,6 +820,12 @@
         <AllowIssuerSelectionForSubOrgApplications>true</AllowIssuerSelectionForSubOrgApplications>
     </OAuth>
 
+    <PushAuthenticator>
+        <DeviceRegistrationContext>
+            <ValidityPeriod>180</ValidityPeriod>
+        </DeviceRegistrationContext>
+    </PushAuthenticator>
+
     <RestApiAuthentication>
         <!-- Configuration for adding realm user field in WWW-Authenticate header. -->
         <AddRealmUserToError>false</AddRealmUserToError>
@@ -1367,6 +1373,9 @@
 
     <Webhooks>
         <MaximumWebhooksPerTenant>10</MaximumWebhooksPerTenant>
+        <Registration>
+            <SkipSignupConfirmationIfAccountLockDisabled>true</SkipSignupConfirmationIfAccountLockDisabled>
+        </Registration>
     </Webhooks>
 
     <LocalAuthenticators>
@@ -2596,6 +2605,14 @@
         </TenantQualifiedUrls>
     </TenantContext>
 
+    <!--
+        SaaS application configurations.
+    -->
+    <SaaS>
+        <EnableAppCreation>false</EnableAppCreation>
+        <EnableCrossTenantOperations>false</EnableCrossTenantOperations>
+    </SaaS>
+
     <TenantContextsToRewrite>
         <WebApp>
             <Context>/api/identity/user/v1.0/</Context>
@@ -2673,6 +2690,21 @@
             <Context>/push-auth/(.*)</Context>
         </Servlet>
     </OrgContextsToRewriteInTenantPerspective>
+
+    <OrgResourceContextsToRewriteInTenantPerspective>
+        <WebApp>
+            <Context>
+                <BasePath>/api/</BasePath>
+                <SubPaths>
+                    <Path>/api/server/v1/branding-preference</Path>
+                    <Path>/api/server/v1/branding-preference/resolve</Path>
+                    <Path>/api/server/v1/branding-preference/text</Path>
+                    <Path>/api/server/v1/branding-preference/text/resolve</Path>
+                    <Path>/api/server/v1/validation-rules</Path>
+                </SubPaths>
+            </Context>
+        </WebApp>
+    </OrgResourceContextsToRewriteInTenantPerspective>
 
     <OrgContextsToRewrite>
         <WebApp>
@@ -2870,6 +2902,9 @@
 
     <!-- Configuration to enable or disable claim filtering based on scope. -->
     <EnableScopeBasedClaimFiltering>true</EnableScopeBasedClaimFiltering>
+    <!-- Configuration options for controlling the inclusion of additional information in API-based authentication responses. -->
+    <IncludeAuthFailureReasonInAPIBasedAuthResponse>true</IncludeAuthFailureReasonInAPIBasedAuthResponse>
+    <IncludeMultiOptionsInAPIBasedAuthResponse>true</IncludeMultiOptionsInAPIBasedAuthResponse>
 
     <!-- Configuration to allow only SP requested claims during federated flow. -->
     <AllowSPRequestedFedClaimsOnly>true</AllowSPRequestedFedClaimsOnly>
@@ -2977,6 +3012,12 @@
             <FlowTypeTTL type="INVITED_USER_REGISTRATION">30</FlowTypeTTL>
         </FlowTypeTTLs>
         <EnableLegacyFlows>false</EnableLegacyFlows>
+        <EnableLegacySelfRegistrationFlow>false</EnableLegacySelfRegistrationFlow>
+        <EnableLegacyPasswordRecoveryFlow>false</EnableLegacyPasswordRecoveryFlow>
+        <EnableLegacyInvitedUserRegistrationFlow>false</EnableLegacyInvitedUserRegistrationFlow>
+        <DefaultEnabledFlows>
+            <FlowType>INVITED_USER_REGISTRATION</FlowType>
+        </DefaultEnabledFlows>
         <Registration>
             <DisplayClaimAvailability>false</DisplayClaimAvailability>
         </Registration>
@@ -2998,4 +3039,11 @@
     <WorkflowEngine>
         <MaxApproverNotifications>15</MaxApproverNotifications>
     </WorkflowEngine>
+    <UseResidentUserIdForAuthenticatedSharedUsers>true</UseResidentUserIdForAuthenticatedSharedUsers>
+
+    <AppNativeAuthentication>
+        <HandleFailCompletedAuthenticatorStatus>true</HandleFailCompletedAuthenticatorStatus>
+    </AppNativeAuthentication>
+    <!-- Config to allow legacy SCIM enterprise user behaviors -->
+    <EnableSCIMLegacyEnterpriseUser>false</EnableSCIMLegacyEnterpriseUser>
 </Server>

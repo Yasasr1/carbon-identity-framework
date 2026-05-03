@@ -28,9 +28,9 @@ import org.wso2.carbon.identity.flow.execution.engine.graph.TaskExecutionNode;
 import org.wso2.carbon.identity.flow.execution.engine.graph.UserChoiceDecisionNode;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionStep;
-import org.wso2.carbon.identity.flow.execution.engine.validation.InputValidator;
 import org.wso2.carbon.identity.flow.execution.engine.model.NodeResponse;
 import org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils;
+import org.wso2.carbon.identity.flow.execution.engine.validation.InputValidator;
 import org.wso2.carbon.identity.flow.mgt.Constants;
 import org.wso2.carbon.identity.flow.mgt.model.DataDTO;
 import org.wso2.carbon.identity.flow.mgt.model.GraphConfig;
@@ -103,6 +103,10 @@ public class FlowExecutionEngine {
 
         while (currentNode != null) {
             NodeResponse nodeResponse = triggerNode(currentNode, context);
+            // If the current node was changed during execution, update the reference to the current node.
+            if (currentNode.getId() != null && !currentNode.getId().equals(context.getCurrentNode().getId())) {
+                currentNode = context.getCurrentNode();
+            }
             context.setCurrentNodeResponse(nodeResponse);
             if (STATUS_COMPLETE.equals(nodeResponse.getStatus())) {
                 currentNode = moveToNextNode(graph, currentNode);
@@ -192,6 +196,8 @@ public class FlowExecutionEngine {
     private NodeResponse triggerNode(NodeConfig nodeConfig, FlowExecutionContext context)
             throws FlowEngineException {
 
+        // TODO: This validation is added temporarily and will be moved to the executor.
+        // Tracking issue: https://github.com/wso2/product-is/issues/27206
         NodeResponse validationResponse = InputValidator.getInstance().executeInputValidation(context);
         if (validationResponse != null) {
             return validationResponse;
