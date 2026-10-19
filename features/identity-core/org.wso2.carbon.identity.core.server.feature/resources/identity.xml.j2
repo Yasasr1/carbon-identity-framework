@@ -5484,6 +5484,22 @@
     <EnhancedOrganizationAuthenticationFeatureEnabled>{{enhanced_organization_authentication_feature.enabled}}</EnhancedOrganizationAuthenticationFeatureEnabled>
     <WorkflowEngine>
         <MaxApproverNotifications>{{workflow_engine.max_approver_notifications}}</MaxApproverNotifications>
+        {% if workflow_engine.external is defined %}
+        <ExternalEngine>
+            <Endpoint>{{workflow_engine.external.endpoint}}</Endpoint>
+            <AuthType>{{workflow_engine.external.auth_type | default('NONE')}}</AuthType>
+            {% if workflow_engine.external.username is defined %}
+            <Username>{{workflow_engine.external.username}}</Username>
+            <Password>{{workflow_engine.external.password}}</Password>
+            {% endif %}
+            {% if workflow_engine.external.access_token is defined %}
+            <AccessToken>{{workflow_engine.external.access_token}}</AccessToken>
+            {% endif %}
+            <TimeoutMs>{{workflow_engine.external.timeout_ms | default(10000)}}</TimeoutMs>
+            <MaxRetries>{{workflow_engine.external.max_retries | default(3)}}</MaxRetries>
+            <DispatchDelayMs>{{workflow_engine.external.dispatch_delay_ms | default(1000)}}</DispatchDelayMs>
+        </ExternalEngine>
+        {% endif %}
     </WorkflowEngine>
     <UseResidentUserIdForAuthenticatedSharedUsers>{{use_resident_user_id_for_authenticated_shared_users.enabled}}</UseResidentUserIdForAuthenticatedSharedUsers>
 
