@@ -35,6 +35,7 @@ import org.wso2.carbon.identity.application.authentication.framework.context.Aut
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.UserIdNotFoundException;
 import org.wso2.carbon.identity.application.authentication.framework.handler.approles.ApplicationRolesResolver;
+import org.wso2.carbon.identity.application.authentication.framework.handler.approles.exception.ApplicationRolesException;
 import org.wso2.carbon.identity.application.authentication.framework.handler.claims.ClaimHandler;
 import org.wso2.carbon.identity.application.authentication.framework.handler.sequence.impl.DefaultSequenceHandlerUtils;
 import org.wso2.carbon.identity.application.authentication.framework.internal.FrameworkServiceDataHolder;
@@ -430,6 +431,33 @@ public class DefaultClaimHandler implements ClaimHandler {
         ServiceProvider serviceProvider = context.getSequenceConfig().getApplicationConfig().getServiceProvider();
         if (serviceProvider == null) {
             return null;
+        }
+        String applicationResourceId = serviceProvider.getApplicationResourceId();
+        /* A shared user who logged in directly to the organization (Shared User Identifier) has a resident tenant
+           different from the application's. Resolve the roles of the shared profile in the application's
+           organization instead of treating it as a SaaS (cross-tenant) login. */
+        Optional<AuthenticatedUser> sharedUserIdentifiedInSequence =
+                FrameworkUtils.getSharedUserIdentifiedInSequence(context);
+        if (sharedUserIdentifiedInSequence.isPresent()
+                && StringUtils.isNotEmpty(sharedUserIdentifiedInSequence.get().getSharedUserId())) {
+            ApplicationRolesResolver appRolesResolver = FrameworkServiceDataHolder.getInstance()
+                    .getHighestPriorityApplicationRolesResolver();
+            if (appRolesResolver == null) {
+                return new ArrayList<>();
+            }
+            AuthenticatedUser sharedUser = new AuthenticatedUser(authenticatedUser);
+            sharedUser.setSharedUser(true);
+            sharedUser.setSharedUserId(sharedUserIdentifiedInSequence.get().getSharedUserId());
+            sharedUser.setAccessingOrganization(sharedUserIdentifiedInSequence.get().getAccessingOrganization());
+            sharedUser.setUserResidentOrganization(sharedUserIdentifiedInSequence.get().getUserResidentOrganization());
+            try {
+                String[] roles = appRolesResolver.getAppAssociatedRolesOfLocalUser(sharedUser,
+                        applicationResourceId, serviceProvider.getTenantDomain());
+                return roles == null ? new ArrayList<>() : Arrays.asList(roles);
+            } catch (ApplicationRolesException e) {
+                throw new FrameworkException("Error while retrieving app associated roles for shared user: " +
+                        authenticatedUser.getLoggableUserId() + " and application: " + applicationResourceId, e);
+            }
         }
         /* If the application and user are in different tenant domains and the ReturnRolesInSaaSAppsInIDToken config
            is disabled, return an empty list. */

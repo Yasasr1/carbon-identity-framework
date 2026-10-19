@@ -534,6 +534,12 @@ public class AppAssociatedRolesResolverImpl implements ApplicationRolesResolver 
 
     private boolean isSharedUserAccessingSharedOrg(AuthenticatedUser authenticatedUser) {
 
+        // Shared user logged in directly to the organization (Shared User Identifier): the roles live on the
+        // shared profile in the accessing organization.
+        if (authenticatedUser.isSharedUser() && StringUtils.isNotEmpty(authenticatedUser.getSharedUserId()) &&
+                StringUtils.isNotEmpty(authenticatedUser.getAccessingOrganization())) {
+            return true;
+        }
         return StringUtils.isNotEmpty(authenticatedUser.getUserSharedOrganizationId()) &&
                 StringUtils.isNotEmpty(authenticatedUser.getAccessingOrganization()) &&
                 StringUtils.equals(authenticatedUser.getUserSharedOrganizationId(),
