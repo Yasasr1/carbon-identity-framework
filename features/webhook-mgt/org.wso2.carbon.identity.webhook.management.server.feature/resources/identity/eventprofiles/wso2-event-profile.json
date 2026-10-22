@@ -90,6 +90,11 @@
           "eventName": "User unshared",
           "eventDescription": "Notify if a user is unshared from an organization",
           "eventUri": "https://schemas.identity.wso2.org/events/user/event-type/userUnshared"
+        },
+        {
+          "eventName": "User roles updated",
+          "eventDescription": "Notify if roles are added to or removed from a user",
+          "eventUri": "https://schemas.identity.wso2.org/events/user/event-type/userRolesUpdated"
         }
       ]
     },

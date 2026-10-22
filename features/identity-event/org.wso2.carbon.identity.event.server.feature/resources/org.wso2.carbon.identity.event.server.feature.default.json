@@ -351,7 +351,8 @@
     "USER_REGISTRATION",
     "USER_REGISTRATION_INVITE_WITH_PASSWORD",
     "POST_SHARE_USER",
-    "POST_UNSHARE_USER"
+    "POST_UNSHARE_USER",
+    "POST_UPDATE_USER_LIST_OF_ROLE_V2_EVENT"
     ],
   "identity_mgt.events.schemes.SessionEventHook.module_index": "53",
   "identity_mgt.events.schemes.SessionEventHook.properties.enable": true,
