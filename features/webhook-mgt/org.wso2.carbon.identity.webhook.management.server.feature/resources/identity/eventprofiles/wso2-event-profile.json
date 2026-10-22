@@ -80,6 +80,16 @@
           "eventName": "User account deleted",
           "eventDescription": "Notify if user account is deleted",
           "eventUri": "https://schemas.identity.wso2.org/events/user/event-type/userDeleted"
+        },
+        {
+          "eventName": "User shared",
+          "eventDescription": "Notify if a user is shared with an organization",
+          "eventUri": "https://schemas.identity.wso2.org/events/user/event-type/userShared"
+        },
+        {
+          "eventName": "User unshared",
+          "eventDescription": "Notify if a user is unshared from an organization",
+          "eventUri": "https://schemas.identity.wso2.org/events/user/event-type/userUnshared"
         }
       ]
     },

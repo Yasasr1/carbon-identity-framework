@@ -349,7 +349,9 @@
     "POST_ENABLE_ACCOUNT",
     "USER_REGISTRATION_SUCCESS",
     "USER_REGISTRATION",
-    "USER_REGISTRATION_INVITE_WITH_PASSWORD"
+    "USER_REGISTRATION_INVITE_WITH_PASSWORD",
+    "POST_SHARE_USER",
+    "POST_UNSHARE_USER"
     ],
   "identity_mgt.events.schemes.SessionEventHook.module_index": "53",
   "identity_mgt.events.schemes.SessionEventHook.properties.enable": true,
