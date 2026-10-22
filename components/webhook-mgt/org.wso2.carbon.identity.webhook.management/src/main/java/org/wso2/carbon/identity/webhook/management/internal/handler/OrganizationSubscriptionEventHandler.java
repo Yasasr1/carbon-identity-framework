@@ -23,15 +23,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.bean.IdentityEventMessageContext;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.organization.management.service.model.Organization;
 import org.wso2.carbon.identity.webhook.management.api.exception.WebhookMgtException;
-import org.wso2.carbon.identity.webhook.management.internal.service.WebhookChannelService;
-import org.wso2.carbon.identity.webhook.management.internal.service.impl.WebhookChannelServiceImpl;
-import org.wso2.carbon.identity.webhook.management.internal.util.OrganizationSubscriptionConfig;
+import org.wso2.carbon.identity.webhook.management.internal.service.impl.WebhookManagementServiceImpl;
 import org.wso2.carbon.identity.webhook.management.internal.util.WebhookManagementAuditLogger;
 
 import java.util.Map;
@@ -71,18 +70,18 @@ public class OrganizationSubscriptionEventHandler extends AbstractEventHandler {
     private static final String HANDLER_NAME = "OrganizationSubscriptionEventHandler";
     private static final String HANDLER_ENABLED_PROPERTY = HANDLER_NAME + ".enable";
 
-    private final WebhookChannelService webhookChannelService;
+    private final WebhookManagementServiceImpl webhookManagementService;
     private final WebhookManagementAuditLogger auditLogger;
 
     public OrganizationSubscriptionEventHandler() {
 
-        this(new WebhookChannelServiceImpl(), new WebhookManagementAuditLogger());
+        this(WebhookManagementServiceImpl.getInstance(), new WebhookManagementAuditLogger());
     }
 
-    OrganizationSubscriptionEventHandler(WebhookChannelService webhookChannelService,
+    OrganizationSubscriptionEventHandler(WebhookManagementServiceImpl webhookManagementService,
                                          WebhookManagementAuditLogger auditLogger) {
 
-        this.webhookChannelService = webhookChannelService;
+        this.webhookManagementService = webhookManagementService;
         this.auditLogger = auditLogger;
     }
 
@@ -129,7 +128,7 @@ public class OrganizationSubscriptionEventHandler extends AbstractEventHandler {
             return false;
         }
         return Boolean.parseBoolean(configs.getModuleProperties().getProperty(HANDLER_ENABLED_PROPERTY)) &&
-                OrganizationSubscriptionConfig.isChannelOrganizationSubscriptionSupported();
+                IdentityUtil.isChildOrganizationSubscriptionEnabled();
     }
 
     @Override
@@ -156,7 +155,7 @@ public class OrganizationSubscriptionEventHandler extends AbstractEventHandler {
         }
 
         try {
-            webhookChannelService.subscribeNewOrganization(newOrgId);
+            webhookManagementService.subscribeNewOrganization(newOrgId);
             LOG.debug("Materialised webhook channel subscriptions for new organization: " + newOrgId);
         } catch (WebhookMgtException | RuntimeException e) {
             LOG.error("Could not subscribe the new organization to the webhook channels of its ancestors. The " +
@@ -177,7 +176,7 @@ public class OrganizationSubscriptionEventHandler extends AbstractEventHandler {
         String deletedOrgId = (String) organizationId;
 
         try {
-            webhookChannelService.unsubscribeDeletedOrganization(deletedOrgId);
+            webhookManagementService.unsubscribeDeletedOrganization(deletedOrgId);
             LOG.debug("Removed webhook channel subscriptions of deleted organization: " + deletedOrgId);
         } catch (WebhookMgtException | RuntimeException e) {
             LOG.error("Could not remove the webhook channel subscriptions of a deleted organization. The " +
