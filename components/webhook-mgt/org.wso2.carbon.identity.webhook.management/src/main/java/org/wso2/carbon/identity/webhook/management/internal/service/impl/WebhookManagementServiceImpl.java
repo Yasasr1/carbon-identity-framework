@@ -1095,21 +1095,42 @@ public class WebhookManagementServiceImpl implements WebhookManagementService {
             return subscriptions;
         }
         for (String orgId : orgIds) {
-            try {
-                subscriptions.add(ChannelOrgSubscription.builder()
-                        .channelUuid(channelUuid)
-                        .subscribedOrgId(orgId)
-                        // resolveTenantId returns the tenant UUID, not the numeric id. The tenant
-                        // domain is the unambiguous hop between an organization and its tenant id.
-                        .subscribedOrgTenantId(IdentityTenantUtil.getTenantId(
-                                getOrganizationManager().resolveTenantDomain(orgId)))
-                        .build());
-            } catch (OrganizationManagementException e) {
-                throw WebhookManagementExceptionHandler.handleServerException(
-                        ErrorMessage.ERROR_CODE_SUB_ORG_HIERARCHY_ERROR, e, orgId);
+            Integer tenantId = resolveSubscribedOrgTenantId(orgId);
+            if (tenantId == null) {
+                continue;
             }
+            subscriptions.add(ChannelOrgSubscription.builder()
+                    .channelUuid(channelUuid)
+                    .subscribedOrgId(orgId)
+                    .subscribedOrgTenantId(tenantId)
+                    .build());
         }
         return subscriptions;
+    }
+
+    /**
+     * Resolve the tenant id an organization's events are raised in. An organization without a tenant cannot raise
+     * events, so it is skipped rather than failing the whole subscription.
+     *
+     * @param orgId Organization to resolve.
+     * @return The tenant id, or null if the organization has no tenant.
+     * @throws WebhookMgtException If the tenant domain cannot be resolved.
+     */
+    private Integer resolveSubscribedOrgTenantId(String orgId) throws WebhookMgtException {
+
+        try {
+            // resolveTenantId returns the tenant UUID, not the numeric id. The tenant domain is the
+            // unambiguous hop between an organization and its tenant id.
+            String tenantDomain = getOrganizationManager().resolveTenantDomain(orgId);
+            if (StringUtils.isBlank(tenantDomain)) {
+                LOG.warn("Organization: " + orgId + " has no tenant, so it is not subscribed to the channel.");
+                return null;
+            }
+            return IdentityTenantUtil.getTenantId(tenantDomain);
+        } catch (OrganizationManagementException e) {
+            throw WebhookManagementExceptionHandler.handleServerException(
+                    ErrorMessage.ERROR_CODE_SUB_ORG_HIERARCHY_ERROR, e, orgId);
+        }
     }
 
     /**
@@ -1232,14 +1253,9 @@ public class WebhookManagementServiceImpl implements WebhookManagementService {
             return tenantIdsByOrgId;
         }
         for (String orgId : orgIds) {
-            try {
-                // resolveTenantId returns the tenant UUID, not the numeric id. The tenant domain is the
-                // unambiguous hop between an organization and its tenant id.
-                tenantIdsByOrgId.put(orgId, IdentityTenantUtil.getTenantId(
-                        getOrganizationManager().resolveTenantDomain(orgId)));
-            } catch (OrganizationManagementException e) {
-                throw WebhookManagementExceptionHandler.handleServerException(
-                        ErrorMessage.ERROR_CODE_SUB_ORG_HIERARCHY_ERROR, e, orgId);
+            Integer tenantId = resolveSubscribedOrgTenantId(orgId);
+            if (tenantId != null) {
+                tenantIdsByOrgId.put(orgId, tenantId);
             }
         }
         return tenantIdsByOrgId;
